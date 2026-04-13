@@ -1,0 +1,15 @@
+- title: "LLM Bridge"
+  summary: "An open-source project around connecting and orchestrating large language model workflows."
+  url: "https://github.com/Mrchen116/LLM_Bridge"
+  tags:
+    - "LLM"
+    - "Open Source"
+    - "Engineering"
+
+- title: "AudioInput"
+  summary: "A practical project focused on audio input workflows and tooling."
+  url: "https://github.com/Mrchen116/AudioInput"
+  tags:
+    - "Audio"
+    - "Tooling"
+    - "Open Source"
