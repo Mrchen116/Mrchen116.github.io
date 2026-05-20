@@ -2,68 +2,46 @@
 title: About
 ---
 
-<section class="hero">
-  <div class="hero-copy">
-    <p class="eyebrow">Researcher & Engineer</p>
-    <h1>Chen, Zijian</h1>
-    <p class="lead">
-      I build open-source software, write technical notes, and document project
-      learnings. This site is a focused record of what I am building and what I
-      am learning.
-    </p>
-    <p class="hero-links">
-      <a href="https://github.com/Mrchen116">GitHub</a>
-    </p>
-  </div>
+<header>
+  <h1 class="name">Chen, Zijian</h1>
+  <p class="tagline">Trying my best to deliver every job a human can do — to agents.</p>
+  <p class="bio">Agent Engineer. <em>MS in Artificial Intelligence, Beijing University of Posts and Telecommunications (2022–2025). BS in Software Engineering, Shenzhen University (2018–2022).</em></p>
+  <p class="bio">Working on multi-modal LLMs, agent orchestration, and the boring infrastructure that makes them reliable. This site is where I keep notes I would rather not lose.</p>
+</header>
+
+{% assign writings = site.posts | concat: site.articles | sort: "date" | reverse %}
+
+<section>
+  <h2>Recent writing</h2>
+  {% for w in writings limit:5 %}
+    <div class="entry">
+      <span class="date">{{ w.date | date: "%Y·%m·%d" }}</span>
+      <div>
+        <div class="title"><a href="{{ w.url | relative_url }}">{{ w.title }}</a>{% if w.kind == 'article' %}<span class="badge">article</span>{% endif %}</div>
+        {% if w.excerpt %}<p class="sum">{{ w.excerpt | strip_html | truncate: 160 }}</p>{% endif %}
+      </div>
+    </div>
+  {% endfor %}
+  <p style="margin-top:18px;"><a href="{{ '/writing/' | relative_url }}" class="mono" style="font-size:12px; color:var(--muted); text-decoration:none;">All writing →</a></p>
 </section>
 
-<section class="section-block">
-  <div class="section-header">
-    <p class="eyebrow">Selected Work</p>
-    <h2>Recent Projects</h2>
-  </div>
-  <div class="card-grid">
-    {% for project in site.data.projects limit:2 %}
-      <article class="card">
-        <h3><a href="{{ project.url }}">{{ project.title }}</a></h3>
-        <p>{{ project.summary }}</p>
-        <p class="meta">
-          {% for tag in project.tags %}
-            <span>{{ tag }}</span>
-          {% endfor %}
-        </p>
-      </article>
-    {% endfor %}
-  </div>
-  <p class="section-link"><a href="{{ '/projects/' | relative_url }}">View all projects</a></p>
+<section>
+  <h2>Open source</h2>
+  {% for project in site.data.projects %}
+    <div class="proj">
+      <div>
+        <div class="name-row"><a href="{{ project.url }}">{{ project.title }}</a></div>
+        <p class="desc">{{ project.summary }}</p>
+      </div>
+      <span class="tags">{% for tag in project.tags %}{{ tag | downcase }}{% unless forloop.last %} · {% endunless %}{% endfor %}</span>
+    </div>
+  {% endfor %}
 </section>
 
-<section class="section-block">
-  <div class="section-header">
-    <p class="eyebrow">Writing</p>
-    <h2>Latest Posts</h2>
+<section>
+  <h2>Elsewhere</h2>
+  <div class="connect">
+    <a href="https://github.com/{{ site.author.github }}">GitHub <span class="arrow">↗</span></a>
+    <a href="#" data-u="{{ site.contact_user }}" data-h="{{ site.contact_host }}">Email <span class="arrow">↗</span></a>
   </div>
-  <div class="list-block">
-    {% for post in site.posts limit:3 %}
-      <article class="list-item">
-        <p class="meta">{{ post.date | date: "%b %d, %Y" }}</p>
-        <h3><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h3>
-        {% if post.excerpt %}
-          <p>{{ post.excerpt | strip_html | truncate: 140 }}</p>
-        {% endif %}
-      </article>
-    {% endfor %}
-  </div>
-  <p class="section-link"><a href="{{ '/posts/' | relative_url }}">Browse all posts</a></p>
-</section>
-
-<section class="section-block">
-  <div class="section-header">
-    <p class="eyebrow">Notes</p>
-    <h2>Publications</h2>
-  </div>
-  <p>
-    A dedicated publications page will be added later as papers and write-ups
-    accumulate. For now, this site focuses on projects and technical posts.
-  </p>
 </section>

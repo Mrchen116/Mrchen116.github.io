@@ -1,0 +1,402 @@
+/* =============================================================
+   Chen, Zijian — Article core styles (unified palette)
+   Used by all _articles/*.html after convert.py runs.
+   Scope: everything is under `.art-body` (the wrapper div the
+   converter wraps article content in).
+============================================================= */
+
+.art-body {
+  /* base ink + paper */
+  --a-ink:       #1a1a1a;
+  --a-muted:     #6b6b6b;
+  --a-faint:     #9a9a9a;
+  --a-rule:      #e6e3dc;
+  --a-paper:     #ffffff;
+  --a-soft:      #f5f1ea;
+
+  /* site primary — same rust used in nav/hero */
+  --a-accent:        #8b3a2f;
+  --a-accent-soft:   #f5ebe6;
+  --a-accent-stroke: #c9a89e;
+
+  /* functional polychrome — muted, print-feel, used in diagrams
+     and callouts to encode role/semantic, not for decoration */
+  --a-plum:          #7a3a5c;   /* role: subagent */
+  --a-plum-soft:     #f1e6ec;
+  --a-plum-stroke:   #b88aa0;
+
+  --a-forest:        #4a6f3a;   /* role: bash / script / "good" */
+  --a-forest-soft:   #ecf0e6;
+  --a-forest-stroke: #a8c0a0;
+
+  --a-ochre:         #a07020;   /* role: user / warning */
+  --a-ochre-soft:    #f5ecdb;
+  --a-ochre-stroke:  #d4a86a;
+
+  --a-teal:          #2a6470;   /* role: info / note */
+  --a-teal-soft:     #e6eef0;
+  --a-teal-stroke:   #9ab8be;
+
+  /* code */
+  --a-code-bg:    #f5f1ea;
+  --a-code-ink:   #5a2a22;
+  --a-pre-bg:     #1a1a1a;
+  --a-pre-ink:    #e4e0d4;
+
+  /* layout — single text column, everything (including diagrams, code,
+     tree, tables) flows inline at the same width. The .art-body element
+     inherits the parent shell's width. */
+  max-width: 100%;
+  color: var(--a-ink);
+  font-family: "Newsreader", Georgia, "Songti SC", "Noto Serif SC", serif;
+  font-size: 17px;
+  line-height: 1.72;
+  font-optical-sizing: auto;
+}
+
+/* ------- typography ------- */
+.art-body .lead {
+  font-size: 19px;
+  color: var(--a-muted);
+  font-style: italic;
+  margin: 0 0 24px;
+  text-wrap: balance;
+}
+.art-body h2 {
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 52px 0 14px;
+  color: var(--a-ink);
+}
+.art-body h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 32px 0 10px;
+  color: var(--a-ink);
+}
+.art-body h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 18px 0 8px;
+  color: var(--a-accent);
+}
+.art-body p { margin: 12px 0; text-wrap: pretty; }
+.art-body strong { color: var(--a-ink); }
+.art-body em { color: var(--a-muted); font-style: italic; }
+.art-body a {
+  color: var(--a-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* ------- code ------- */
+.art-body code {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--a-code-bg);
+  color: var(--a-code-ink);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.88em;
+}
+.art-body pre {
+  overflow: auto;
+  background: var(--a-pre-bg);
+  color: var(--a-pre-ink);
+  padding: 16px 20px;
+  border-radius: 4px;
+  line-height: 1.6;
+  font-size: 13px;
+  margin: 18px 0;
+}
+.art-body pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* ------- tables ------- */
+.art-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0 24px;
+  font-size: 14.5px;
+  background: var(--a-paper);
+  border: 1px solid var(--a-rule);
+  border-radius: 4px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+}
+.art-body th {
+  background: var(--a-ink);
+  color: #fff;
+  text-align: left;
+  padding: 10px 14px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+.art-body td {
+  border-bottom: 1px solid var(--a-rule);
+  padding: 11px 14px;
+  vertical-align: top;
+  color: var(--a-ink);
+}
+.art-body tr:last-child td { border-bottom: 0; }
+.art-body td code { background: var(--a-code-bg); }
+
+/* ------- lists ------- */
+.art-body ul, .art-body ol { padding-left: 22px; margin: 12px 0 18px; }
+.art-body li { margin-bottom: 5px; line-height: 1.65; }
+.art-body li::marker { color: var(--a-faint); }
+
+/* ------- blockquote ------- */
+.art-body blockquote {
+  margin: 22px 0;
+  padding: 6px 0 6px 18px;
+  border-left: 3px solid var(--a-accent);
+  color: var(--a-muted);
+  font-style: italic;
+}
+
+/* ------- note callouts (semantic) ------- */
+.art-body .note {
+  border-left: 4px solid var(--a-teal);
+  background: var(--a-teal-soft);
+  padding: 14px 18px;
+  border-radius: 0 4px 4px 0;
+  margin: 18px 0;
+  font-size: 15px;
+}
+.art-body .note.warn  { border-left-color: var(--a-ochre);  background: var(--a-ochre-soft); }
+.art-body .note.green { border-left-color: var(--a-forest); background: var(--a-forest-soft); }
+
+/* ------- generic callout box ------- */
+.art-body .callout {
+  background: var(--a-paper);
+  border: 1px solid var(--a-rule);
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin: 18px 0;
+}
+
+/* ------- role-card (info card with meta tags) ------- */
+.art-body .role-card {
+  background: var(--a-paper);
+  border: 1px solid var(--a-rule);
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.art-body .role-card h4 { margin-top: 0; }
+.art-body .role-card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--a-muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.art-body .role-card .meta span {
+  background: var(--a-soft);
+  padding: 2px 9px;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+}
+
+/* ------- step (sequenced explanation block) ------- */
+.art-body .step {
+  background: var(--a-paper);
+  border: 1px solid var(--a-rule);
+  border-left: 4px solid var(--a-accent);
+  border-radius: 0 4px 4px 0;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.art-body .step .who {
+  display: inline-block;
+  background: var(--a-accent-soft);
+  color: var(--a-accent);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 3px;
+  font-weight: 600;
+  margin-right: 8px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.art-body .step .who.sub   { background: var(--a-plum-soft);   color: var(--a-plum); }
+.art-body .step .who.bash  { background: var(--a-forest-soft); color: var(--a-forest); }
+.art-body .step .who.user  { background: var(--a-ochre-soft);  color: var(--a-ochre); }
+.art-body .step.sub  { border-left-color: var(--a-plum); }
+.art-body .step.bash { border-left-color: var(--a-forest); }
+.art-body .step.user { border-left-color: var(--a-ochre); }
+
+/* ------- tree (file listing) ------- */
+.art-body .tree {
+  background: var(--a-pre-bg);
+  color: var(--a-pre-ink);
+  border-radius: 4px;
+  padding: 18px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  white-space: pre;
+  overflow: auto;
+  line-height: 1.55;
+  margin: 18px 0;
+}
+
+/* ------- diagram (SVG container) ------- */
+.art-body .diagram {
+  background: var(--a-paper);
+  border: 1px solid var(--a-rule);
+  border-radius: 4px;
+  padding: 22px;
+  margin: 24px 0;
+  overflow: auto;
+}
+.art-body .diagram-title {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--a-accent);
+  margin-bottom: 12px;
+}
+.art-body .diagram svg { width: 100%; height: auto; display: block; }
+.art-body .diagram svg text {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+}
+.art-body .figure-caption {
+  color: var(--a-muted);
+  font-size: 13.5px;
+  margin-top: 12px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ------- header / eyebrow ------- */
+.art-body .eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--a-accent);
+  font-weight: 500;
+  margin: 0 0 14px;
+}
+
+/* ------- diagrams + code + tree + tables: same width as text column ------- */
+.art-body .diagram,
+.art-body .tree,
+.art-body pre,
+.art-body table {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ============================================================
+   Bilingual content (ZH ↔ EN toggle)
+   Pattern (works standalone-double-click AND inside Jekyll):
+
+   <div class="lang-toggle">
+     <button data-target="zh" class="active">中文</button>
+     <button data-target="en">EN</button>
+   </div>
+
+   <div class="prompt-block">
+     <pre data-lang="en">English version</pre>
+     <pre data-lang="zh">中文版本</pre>
+   </div>
+
+   State lives on .art-body[data-lang="…"] — site's article layout
+   ships `<div class="art-body" data-lang="zh">` by default, and
+   lang-toggle.js swaps it on button click.
+============================================================ */
+
+.art-body .lang-toggle {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 100;
+  background: var(--a-paper);
+  border: 1px solid var(--a-rule);
+  border-radius: 999px;
+  padding: 2px;
+  display: flex;
+  gap: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.art-body .lang-toggle button {
+  border: 0;
+  background: transparent;
+  color: var(--a-muted);
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: background .12s, color .12s;
+}
+.art-body .lang-toggle button:hover { color: var(--a-accent); }
+.art-body .lang-toggle button.active {
+  background: var(--a-ink);
+  color: var(--a-paper);
+}
+
+/* Both variants exist in the DOM; show only the one matching .art-body[data-lang] */
+.art-body .prompt-block { margin: 12px 0; }
+.art-body .prompt-block > pre,
+.art-body .prompt-block > [data-lang] {
+  display: none;
+}
+.art-body[data-lang="zh"] .prompt-block > pre[data-lang="zh"],
+.art-body[data-lang="zh"] .prompt-block > [data-lang="zh"] { display: block; }
+.art-body[data-lang="en"] .prompt-block > pre[data-lang="en"],
+.art-body[data-lang="en"] .prompt-block > [data-lang="en"] { display: block; }
+
+/* When the toggle is on, push the post nav (Writing) down a touch so
+   it doesn't fight with the floating widget on narrow screens. */
+@media (max-width: 720px) {
+  .art-body .lang-toggle {
+    top: auto;
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+/* ------- catch-all: any SVG anywhere in article body must fit the column ------- */
+/* Authors often set hardcoded width="780" on <svg>; that attribute beats the
+   <svg>{width:100%} rule unless we mark the property as !important here. */
+.art-body svg {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+/* ------- alternative figure container (some articles use .figure instead of .diagram) ------- */
+.art-body .figure {
+  background: var(--a-paper);
+  border: 1px solid var(--a-rule);
+  border-radius: 4px;
+  padding: 22px;
+  margin: 24px 0;
+  overflow-x: auto;
+}
+.art-body .figure svg { width: 100%; }
+
+/* ------- responsive ------- */
+@media (max-width: 760px) {
+  .art-body { font-size: 16px; }
+  .art-body h2 { font-size: 22px; }
+}

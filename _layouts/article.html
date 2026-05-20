@@ -1,32 +1,46 @@
 <!doctype html>
-<html lang="{{ site.lang | default: 'en' }}">
+<html lang="{{ page.lang | default: site.lang | default: 'en' }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if page.title %}{{ page.title }} · {% endif %}{{ site.title }}</title>
-  <meta name="description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
+  <title>{{ page.title }} · {{ site.title }}</title>
+  <meta name="description" content="{{ page.excerpt | strip_html | truncate: 160 }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/article.css' | relative_url }}">
 </head>
 <body>
-  <div class="shell">
+  <div class="shell shell-wide">
 
     <nav class="top">
       <a class="brand" href="{{ '/' | relative_url }}">{{ site.title }}</a>
       <div class="links">
-        {% assign p = page.url %}
-        <a href="{{ '/' | relative_url }}"{% if p == '/' %} class="active"{% endif %}>About</a>
-        <a href="{{ '/writing/' | relative_url }}"{% if p contains '/writing' %} class="active"{% endif %}>Writing</a>
-        <a href="{{ '/projects/' | relative_url }}"{% if p contains '/projects' %} class="active"{% endif %}>Projects</a>
+        <a href="{{ '/' | relative_url }}">About</a>
+        <a href="{{ '/writing/' | relative_url }}" class="active">Writing</a>
+        <a href="{{ '/projects/' | relative_url }}">Projects</a>
       </div>
     </nav>
 
     <main class="content">
-      {{ content }}
+      <div class="crumb"><a href="{{ '/writing/' | relative_url }}">Writing</a> &nbsp;/&nbsp; Article</div>
+      <h1 class="post-title">{{ page.title }}</h1>
+      <div class="post-meta">
+        <span>{{ page.date | date: '%b %d, %Y' }}</span>
+        <span class="dot">·</span>
+        <span>article{% if page.lang %} · {{ page.lang }}{% endif %}</span>
+      </div>
+
+      <div class="art-body" data-lang="zh">
+        {{ content }}
+      </div>
+
+      <div class="post-foot">
+        <a href="{{ '/writing/' | relative_url }}">← All writing</a>
+      </div>
     </main>
 
     <footer class="site-foot">
@@ -37,12 +51,12 @@
   </div>
 
   <script>
-    // Reveal obfuscated mailto: links on click.
     document.querySelectorAll('a[data-u][data-h]').forEach(function(a){
       a.addEventListener('click', function(){
         a.href = 'mailto:' + a.dataset.u + '@' + a.dataset.h;
       });
     });
   </script>
+  <script src="{{ '/assets/js/lang-toggle.js' | relative_url }}"></script>
 </body>
 </html>

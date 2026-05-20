@@ -1,27 +1,56 @@
 title: Chen, Zijian
 email: ""
 description: >-
-  Researcher and engineer focused on open-source projects, technical notes,
-  and project write-ups.
+  Agent Engineer · notes on multi-modal LLMs, agent orchestration,
+  and the infrastructure that makes them reliable.
 baseurl: ""
 url: "https://mrchen116.github.io"
 lang: en
 timezone: Asia/Shanghai
 markdown: kramdown
-permalink: /posts/:title/
+
+# Unified URL space — both Markdown posts and HTML articles
+# live under /writing/<slug>/ so the listing page is a single timeline.
+permalink: /writing/:title/
+
 collections:
-  pages:
+  articles:
     output: true
+    permalink: /writing/:name/
+
 defaults:
   - scope:
       path: ""
     values:
       layout: default
   - scope:
-      path: "_posts"
+      path: ""
+      type: posts
     values:
       layout: post
+      kind: "note"
+  - scope:
+      path: ""
+      type: articles
+    values:
+      layout: article
+      render_with_liquid: false   # _articles/*.html are self-contained;
+                                  # don't let Liquid touch their bodies
+      kind: "article"
+
 author:
   name: "Chen, Zijian"
-  title: "Researcher & Engineer"
+  title: "Agent Engineer"
   github: "Mrchen116"
+
+# Email is rendered obfuscated via JS in the layout — never put it
+# in plain text here, this value is intentionally not used.
+contact_user: "canzigin"
+contact_host: "gmail.com"
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - README.md
+  - ARTICLE_GUIDE.md

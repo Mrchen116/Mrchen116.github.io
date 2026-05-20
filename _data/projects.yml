@@ -1,3 +1,12 @@
+- title: "nano-multiagent"
+  summary: "A lightweight multi-agent framework with a built-in Web IM interface and Gateway, enabling personal AI assistant workflows orchestrated via modular Python agents."
+  url: "https://github.com/Mrchen116/nano-multiagent"
+  tags:
+    - "Multi-Agent"
+    - "LLM"
+    - "Python"
+    - "Open Source"
+
 - title: "LLM Bridge"
   summary: "An open-source project around connecting and orchestrating large language model workflows."
   url: "https://github.com/Mrchen116/LLM_Bridge"
