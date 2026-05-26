@@ -81,7 +81,7 @@ Grader / Analyzer / Comparator 不是常驻进程，也不是 cron 调度的—�
   </defs>
 
   <!-- A Draft -->
-  <rect x="20" y="20" width="940" height="130" rx="10" fill="#ffffff" stroke="#c9a89e"/>
+  <rect x="5" y="20" width="955" height="130" rx="10" fill="#ffffff" stroke="#c9a89e"/>
   <text x="40" y="50" font-size="15" font-weight="700" fill="#8b3a2f">A · Draft（主 agent 直接做）</text>
   <rect x="50" y="70" width="190" height="60" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
   <text x="145" y="95" text-anchor="middle" font-size="13" font-weight="700">访谈用户</text>
@@ -100,7 +100,7 @@ Grader / Analyzer / Comparator 不是常驻进程，也不是 cron 调度的—�
   <text x="865" y="115" text-anchor="middle" font-size="12">prompts 看着合理吗</text>
 
   <!-- B Evaluate -->
-  <rect x="20" y="170" width="940" height="300" rx="10" fill="#ffffff" stroke="#c9a89e"/>
+  <rect x="5" y="170" width="955" height="300" rx="10" fill="#ffffff" stroke="#c9a89e"/>
   <text x="40" y="200" font-size="15" font-weight="700" fill="#8b3a2f">B · Evaluate（主 agent 派 subagent + 跑 Python 聚合脚本）</text>
 
   <!-- Step 1: spawn executors -->
@@ -150,18 +150,18 @@ Grader / Analyzer / Comparator 不是常驻进程，也不是 cron 调度的—�
   <text x="800" y="399" text-anchor="middle" font-size="11" fill="#6b6b6b">找模式：哪条 assertion 永远 pass…</text>
 
   <!-- 4c → down to Step 5 -->
-  <path d="M800 405 L800 425 L720 425 L720 440" fill="none" stroke="#8b3a2f" stroke-width="2.5" marker-end="url(#ar)"/>
+  <path d="M800 405 L800 449 L720 449" fill="none" stroke="#8b3a2f" stroke-width="2.5" marker-end="url(#ar)"/>
 
   <!-- Step 5: viewer + user review -->
-  <rect x="280" y="445" width="440" height="32" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
-  <text x="500" y="466" text-anchor="middle" font-size="13" font-weight="700">Step 5 · 生成 HTML viewer，用户审阅、留 feedback</text>
+  <rect x="280" y="433" width="440" height="32" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
+  <text x="500" y="454" text-anchor="middle" font-size="13" font-weight="700">Step 5 · 生成 HTML viewer，用户审阅、留 feedback</text>
 
   <!-- back-loop: Step 5 → Step 1 (iteration-N+1) -->
-  <path d="M280 461 L40 461 L40 240" fill="none" stroke="#a07020" stroke-width="2.5" marker-end="url(#arBack)"/>
-  <text x="50" y="438" font-size="11" fill="#a07020">不满意：改 SKILL.md → iteration-N+1</text>
+  <path d="M280 449 L20 449 L20 260 L50 260" fill="none" stroke="#a07020" stroke-width="2.5" marker-end="url(#arBack)"/>
+  <text x="50" y="444" font-size="11" fill="#a07020">不满意：改 SKILL.md → iteration-N+1</text>
 
   <!-- C Description Optimization -->
-  <rect x="20" y="490" width="600" height="200" rx="10" fill="#ffffff" stroke="#c9a89e"/>
+  <rect x="5" y="490" width="615" height="200" rx="10" fill="#ffffff" stroke="#c9a89e"/>
   <text x="40" y="520" font-size="15" font-weight="700" fill="#8b3a2f">C · Description Optimization（不用 subagent，纯 Python + claude -p）</text>
   <rect x="50" y="540" width="170" height="65" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
   <text x="135" y="565" text-anchor="middle" font-size="12" font-weight="700">生成 20 条 trigger query</text>
