@@ -52,6 +52,68 @@ lang:  zh-CN
 }
 .art-body details.prompt-source.analyzer   pre { border-left-color: var(--a-ochre); }
 .art-body details.prompt-source.comparator pre { border-left-color: var(--a-plum); }
+
+/* article-local: collapsible iframe demo of the skill-creator eval viewer.
+   Breaks out of the narrow article column because the viewer is a full-app
+   UI that needs ~1100px to breathe. */
+.art-body details.viewer-embed {
+  border: 1px solid var(--a-rule);
+  border-left: 4px solid var(--a-teal);
+  border-radius: 0 4px 4px 0;
+  background: var(--a-paper);
+  margin: 24px 0;
+  padding: 0;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1180px, calc(100vw - 32px));
+}
+.art-body details.viewer-embed > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 12px 18px 12px 36px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--a-teal);
+  background: var(--a-teal-soft);
+  user-select: none;
+  position: relative;
+}
+.art-body details.viewer-embed > summary::-webkit-details-marker { display: none; }
+.art-body details.viewer-embed > summary::before {
+  content: "▸";
+  position: absolute;
+  left: 18px;
+  top: 12px;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+.art-body details.viewer-embed[open] > summary::before { transform: rotate(90deg); }
+.art-body details.viewer-embed[open] > summary { border-bottom: 1px solid var(--a-rule); }
+.art-body details.viewer-embed .viewer-embed-note {
+  padding: 12px 18px 0;
+  font-size: 14.5px;
+  color: var(--a-muted);
+}
+.art-body details.viewer-embed .viewer-embed-frame {
+  display: block;
+  width: calc(100% - 32px);
+  height: min(900px, calc(100vh - 80px));
+  min-height: 720px;
+  border: 1px solid var(--a-rule);
+  border-radius: 3px;
+  margin: 14px 16px 0;
+  background: #faf9f5;
+}
+.art-body details.viewer-embed > .figure-caption { padding: 10px 18px 14px; margin-top: 4px; }
+@media (max-width: 900px) {
+  .art-body details.viewer-embed { width: calc(100vw - 24px); }
+  .art-body details.viewer-embed .viewer-embed-frame {
+    height: min(760px, calc(100vh - 60px));
+    min-height: 560px;
+  }
+}
 </style>
 
 <div class="lang-toggle">
@@ -534,13 +596,13 @@ SKILL.md 没把"executor 必须写 transcript.md"写成强制规则，靠主 age
     反馈框能输入但 "Submit" 在静态环境下会下载 <code>feedback.json</code> 而不是写盘。
   </div>
   <iframe
-    src="/assets/skill-creator/viewer-demo.html"
+    src="/assets/articles/skill-creator-running-mechanism/viewer-demo.html"
     title="skill-creator eval viewer demo"
     loading="lazy"
     class="viewer-embed-frame"></iframe>
   <p class="figure-caption">
     源模板：<code>eval-viewer/viewer.html</code>；数据由 <code>generate_review.py</code> 在真实运行时注入。
-    此处用 <code>tools/gen_viewer_demo.py</code> 生成的虚构数据作演示。
+    此处用 <code>tools/articles/skill-creator-running-mechanism/gen_viewer_demo.py</code> 生成的虚构数据作演示。
   </p>
 </details>
 

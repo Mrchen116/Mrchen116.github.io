@@ -10,12 +10,14 @@ the Outputs tab — that's runs-per-configuration=3 per benchmark.json conventio
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ARTICLE_SLUG = "skill-creator-running-mechanism"
+# tools/articles/<slug>/gen_viewer_demo.py → repo root is 3 levels up
+ROOT = Path(__file__).resolve().parents[3]
 TEMPLATE = Path(
     "/Users/czj/.claude/plugins/marketplaces/claude-plugins-official/"
     "plugins/skill-creator/skills/skill-creator/eval-viewer/viewer.html"
 )
-OUT = ROOT / "assets" / "skill-creator" / "viewer-demo.html"
+OUT = ROOT / "assets" / "articles" / ARTICLE_SLUG / "viewer-demo.html"
 
 
 # ---------------------------------------------------------------------------

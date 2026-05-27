@@ -381,7 +381,85 @@ git log --diff-filter=A --follow --format=%aI -- _articles/<filename> | tail -1
 
 ---
 
-## 9 · 写新文章 checklist
+## 9 · 文章私有的资源放哪（命名空间约定）
+
+写到第二、三篇文章后会出现"专属这一篇但又不是文章 HTML 本身"的东西：iframe 演示页、需要离线生成的产物、给文章用的脚本、一次性的 CSS。如果随手放在 `assets/` `tools/` `assets/css/article.css` 顶层，几个月后没人记得哪条规则归哪篇用，也没法干净地删除一篇文章。
+
+**核心约定：用文章 slug 做命名空间。路径里带 `articles/<slug>/` 的就是这篇文章私有的；不带的就是全站共享。**
+
+### 9.1 文件归属表
+
+| 类型 | 私有路径 | 全站共享路径 | 升级规则 |
+|---|---|---|---|
+| 文章 HTML 本体 | `_articles/<slug>.html` | — | — |
+| 文章生成的资产<br>（iframe 内容、嵌入的 viewer、离线 HTML、图等） | `assets/articles/<slug>/...` | `assets/css/` `assets/js/` 等 | 共享资产是全站基础设施，私有资产不要混进去 |
+| 文章专用脚本<br>（如 demo 生成器、数据预处理） | `tools/articles/<slug>/...` | `tools/<name>.py`<br>（如 `convert.py`） | 共享工具是给所有文章用的（如 `convert.py`），私有工具只服务一篇 |
+| CSS | **写在文章自己的 `<style>` 块里**，convert.py 自动用 `.art-body` 包作用域（见 §6） | `assets/css/article.css` | **≥ 2 篇文章都用到**才升级进 `article.css`。单篇用就留在文章里 |
+| 静态原稿 | `drafts/<slug>.html` | — | drafts/ 是写作时的源稿，和上面的"工具/资产"是两件事 |
+
+### 9.2 完整目录形态举例
+
+假设 `<slug> = skill-creator-running-mechanism`，且这篇文章有一个嵌入式 viewer demo + 生成器：
+
+```
+_articles/
+  skill-creator-running-mechanism.html
+assets/
+  css/                                ← 全站共享
+  js/                                 ← 全站共享
+  articles/
+    skill-creator-running-mechanism/
+      viewer-demo.html                ← 文章私有产物
+tools/
+  convert.py                          ← 全站共享
+  articles/
+    skill-creator-running-mechanism/
+      gen_viewer_demo.py              ← 文章私有脚本
+drafts/
+  skill-creator-running-mechanism.html  ← 源稿（可选）
+```
+
+### 9.3 删一篇文章时
+
+理论上能一把删干净，零孤儿：
+
+```bash
+rm _articles/<slug>.html
+rm -rf assets/articles/<slug>/
+rm -rf tools/articles/<slug>/
+rm drafts/<slug>.html            # 如有
+```
+
+如果删完发现 `assets/css/article.css` 里有规则没人用了，说明当初**单篇规则被错误升级**进了共享 CSS——按 §9.1 升级规则原本就该留在文章 `<style>` 里。
+
+### 9.4 引用文章私有资产
+
+文章正文里引用 iframe / 图片用根路径：
+
+```html
+<iframe src="/assets/articles/<slug>/viewer-demo.html" ...></iframe>
+<img src="/assets/articles/<slug>/diagram.png" ...>
+```
+
+Jekyll 把 `assets/` 整棵树原样复制到 `_site/`，所以 `<slug>` 路径会保留。
+
+### 9.5 文章私有脚本的位置约定
+
+```python
+# tools/articles/<slug>/gen_*.py
+ROOT = Path(__file__).resolve().parents[3]   # tools/articles/<slug>/x.py → repo root
+OUT  = ROOT / "assets" / "articles" / "<slug>" / "out.html"
+```
+
+跑脚本时从仓库根目录跑，路径就对了：
+
+```bash
+python tools/articles/<slug>/gen_something.py
+```
+
+---
+
+## 10 · 写新文章 checklist
 
 写完一篇新 HTML 文章前对照一遍：
 
@@ -390,6 +468,8 @@ git log --diff-filter=A --follow --format=%aI -- _articles/<filename> | tail -1
 - [ ] 文件能双击独立打开看
 - [ ] 用了模板里的 class（`.note` / `.callout` / `.role-card` / `.step` / `.diagram` / `.tree`），没有发明新的
 - [ ] SVG 配色只用 §5 的语义色板里的 hex
+- [ ] 文章特有的 CSS 写在文章自己的 `<style>` 里，不要塞进 `assets/css/article.css`（除非 ≥ 2 篇都在用，见 §9）
+- [ ] 文章特有的生成产物放 `assets/articles/<slug>/`、生成脚本放 `tools/articles/<slug>/`（见 §9）
 - [ ] 跑过 `python tools/convert.py path/to/file.html`，输出到 `_articles/`
 - [ ] `bundle exec jekyll serve` 本地验证 `/writing/<slug>/` 能正常渲染
 - [ ] `git commit && push`
