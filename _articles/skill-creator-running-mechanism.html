@@ -468,6 +468,26 @@ SKILL.md 没把"executor 必须写 transcript.md"写成强制规则，靠主 age
 <p>viewer 有两个 tab：<strong>Outputs</strong>（按 eval 翻页看 with-skill / baseline 产物 + 反馈框）和 <strong>Benchmark</strong>（pass rate / 时延 / token 的表格 + analyzer notes）。用户点 "Submit All Reviews"，所有反馈进 <code>feedback.json</code>。</p>
 </div>
 
+<details class="viewer-embed">
+  <summary>展开看 viewer 实际长什么样（mock 数据，可交互）</summary>
+  <div class="viewer-embed-note">
+    数据按真实 schema 填充（<code>references/schemas.md</code> 里的 <code>pdf</code> skill 范例 —— 填 W-9 表单 + 抽发票 line items）。
+    Outputs tab 里左右翻 4 个 run：2 个 eval × <code>with_skill</code> / <code>without_skill</code>。每个 run 能看产物（transcript、CSV、field_info.json、user_notes）
+    + 折叠的 Grades（assertion 逐条 ✓/✗ + evidence）。Benchmark tab 是 12 个 run（3 runs/config × 2 eval × 2 config）的聚合，
+    包含 run_summary（mean ± stddev）、逐 eval 拆解、逐 assertion 矩阵、analyzer notes。
+    反馈框能输入但 "Submit" 在静态环境下会下载 <code>feedback.json</code> 而不是写盘。
+  </div>
+  <iframe
+    src="/assets/skill-creator/viewer-demo.html"
+    title="skill-creator eval viewer demo"
+    loading="lazy"
+    class="viewer-embed-frame"></iframe>
+  <p class="figure-caption">
+    源模板：<code>eval-viewer/viewer.html</code>；数据由 <code>generate_review.py</code> 在真实运行时注入。
+    此处用 <code>tools/gen_viewer_demo.py</code> 生成的虚构数据作演示。
+  </p>
+</details>
+
 <div class="step">
 <span class="who user">用户</span>
 <p>用户翻 viewer，在每个 eval 的反馈框里写自由文本（"图表缺坐标轴标签" / "完美" / 留空表示 ok），最后提交。Cowork 等无显示环境用 <code>--static</code> 出 HTML 文件让用户自己下载打开。</p>
