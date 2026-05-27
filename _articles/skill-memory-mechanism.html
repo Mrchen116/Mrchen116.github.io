@@ -1087,7 +1087,7 @@ skill_manage(action='patch') 修——别等用户提醒。不被维护的 skill
 
 <h3>9.6 Curator 看到的 candidate list</h3>
 
-<p>在 LLM pass 之前，<code>_render_candidate_list()</code>（<code>curator.py:1349</code>）把所有 agent-created skill 的元数据渲染成一段文本，作为 LLM 的输入参考：</p>
+<p>在 LLM pass 之前，<code>_render_candidate_list()</code>（<code>curator.py:1349</code>）把所有 agent-created skill 的元数据渲染成一段文本，作为 LLM 的输入参考。<strong>注意 candidate list 里只有 active 和 stale 两种 state</strong>——archived 的 skill 已经被 <code>archive_skill()</code> 物理 mv 到 <code>.archive/&lt;name&gt;/</code>，而 <code>list_agent_created_skill_names()</code>（<code>tools/skill_usage.py:236</code>）扫描时显式跳过 <code>.archive</code> 开头的目录，所以它们对 Curator 不可见、不会进入这一轮的整合判断。Curator 这一 pass 只能看到"还没被淘汰"的两批：</p>
 
 <pre>Agent-created skills (47):
 
@@ -1101,7 +1101,7 @@ skill_manage(action='patch') 修——别等用户提醒。不被维护的 skill
 
 <p>每个 skill 一行，含 6 项 telemetry 指标：</p>
 <ul>
-  <li><code>state</code>：active / stale / archived</li>
+  <li><code>state</code>：active 或 stale（archived 不出现，见上）</li>
   <li><code>pinned</code>：用户是否手动钉住（钉住的 LLM 不会动）</li>
   <li><code>activity</code>：总互动次数（view + use + patch）</li>
   <li><code>use</code>：被 agent 真正调用过几次</li>
