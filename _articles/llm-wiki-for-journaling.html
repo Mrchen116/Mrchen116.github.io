@@ -1,0 +1,544 @@
+---
+title: "LLM Wiki 是什么"
+date:  2026-07-06
+excerpt: "LLM Wiki 不是让模型帮我总结文档，也不是传统 RAG 的换皮；它让 LLM 持续维护一套结构化、互相链接、可被再次查询和更新的 Markdown wiki。"
+lang:  zh-CN
+---
+
+<style>
+.art-body{
+      --a-ink: #1a1a1a;
+      --a-muted: #6b6b6b;
+      --a-faint: #9a9a9a;
+      --a-rule: #e6e3dc;
+      --a-paper: #ffffff;
+      --a-soft: #f5f1ea;
+      --a-accent: #8b3a2f;
+      --a-accent-soft: #f5ebe6;
+      --a-plum: #7a3a5c;
+      --a-plum-soft: #f1e6ec;
+      --a-forest: #4a6f3a;
+      --a-forest-soft: #ecf0e6;
+      --a-ochre: #a07020;
+      --a-ochre-soft: #f5ecdb;
+      --a-teal: #2a6470;
+      --a-teal-soft: #e6eef0;
+      --a-code-bg: #f5f1ea;
+      --a-code-ink: #5a2a22;
+      --a-pre-bg: #1a1a1a;
+      --a-pre-ink: #e4e0d4;
+    }
+
+    .art-body{
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      background: var(--a-paper);
+      color: var(--a-ink);
+      font-family: "Newsreader", Georgia, "Songti SC", "Noto Serif SC", serif;
+      font-size: 17px;
+      line-height: 1.72;
+    }
+
+    .art-body .eyebrow{
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--a-accent);
+      font-weight: 500;
+    }
+
+    .art-body h1{
+      font-size: 34px;
+      line-height: 1.15;
+      font-weight: 500;
+      margin: 12px 0 16px;
+    }
+
+    .art-body h2{
+      font-size: 26px;
+      margin: 52px 0 14px;
+      font-weight: 500;
+    }
+
+    .art-body h3{
+      font-size: 18px;
+      margin: 32px 0 10px;
+      font-weight: 600;
+    }
+
+    .art-body .lead{
+      font-size: 19px;
+      color: var(--a-muted);
+      font-style: italic;
+      margin: 0 0 24px;
+    }
+
+    .art-body code{
+      font-family: "JetBrains Mono", monospace;
+      background: var(--a-code-bg);
+      color: var(--a-code-ink);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.88em;
+    }
+
+    .art-body pre{
+      background: var(--a-pre-bg);
+      color: var(--a-pre-ink);
+      padding: 16px 20px;
+      border-radius: 4px;
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .art-body table{
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      border: 1px solid var(--a-rule);
+      border-radius: 4px;
+      font-size: 14.5px;
+      font-family: -apple-system, "Helvetica Neue", "PingFang SC", sans-serif;
+    }
+
+    .art-body th{
+      background: var(--a-ink);
+      color: #fff;
+      text-align: left;
+      padding: 10px 14px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+    }
+
+    .art-body td{
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--a-rule);
+      vertical-align: top;
+    }
+
+    .art-body tr:last-child td{
+      border-bottom: 0;
+    }
+
+    .art-body blockquote{
+      border-left: 3px solid var(--a-accent);
+      padding-left: 18px;
+      color: var(--a-muted);
+      font-style: italic;
+      margin: 22px 0;
+    }
+
+    .art-body .note{
+      border-left: 4px solid var(--a-teal);
+      background: var(--a-teal-soft);
+      padding: 14px 18px;
+      margin: 18px 0;
+      border-radius: 0 4px 4px 0;
+      font-size: 15px;
+    }
+
+    .art-body .note.warn{
+      border-left-color: var(--a-ochre);
+      background: var(--a-ochre-soft);
+    }
+
+    .art-body .note.green{
+      border-left-color: var(--a-forest);
+      background: var(--a-forest-soft);
+    }
+
+    .art-body .callout{
+      background: var(--a-paper);
+      border: 1px solid var(--a-rule);
+      border-radius: 4px;
+      padding: 16px 20px;
+      margin: 18px 0;
+    }
+
+    .art-body .role-card{
+      background: var(--a-paper);
+      border: 1px solid var(--a-rule);
+      border-radius: 4px;
+      padding: 16px 20px;
+      margin: 12px 0;
+    }
+
+    .art-body .role-card h4{
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: var(--a-accent);
+    }
+
+    .art-body .role-card .meta{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: var(--a-muted);
+    }
+
+    .art-body .role-card .meta span{
+      background: var(--a-soft);
+      padding: 2px 9px;
+      border-radius: 3px;
+    }
+
+    .art-body .step{
+      background: var(--a-paper);
+      border: 1px solid var(--a-rule);
+      border-left: 4px solid var(--a-accent);
+      padding: 14px 18px;
+      margin: 12px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .art-body .step.sub{
+      border-left-color: var(--a-plum);
+    }
+
+    .art-body .step.bash{
+      border-left-color: var(--a-forest);
+    }
+
+    .art-body .step.user{
+      border-left-color: var(--a-ochre);
+    }
+
+    .art-body .step .who{
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 3px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-right: 8px;
+      background: var(--a-accent-soft);
+      color: var(--a-accent);
+    }
+
+    .art-body .step .who.sub{
+      background: var(--a-plum-soft);
+      color: var(--a-plum);
+    }
+
+    .art-body .step .who.bash{
+      background: var(--a-forest-soft);
+      color: var(--a-forest);
+    }
+
+    .art-body .step .who.user{
+      background: var(--a-ochre-soft);
+      color: var(--a-ochre);
+    }
+
+    .art-body .tree{
+      background: var(--a-pre-bg);
+      color: var(--a-pre-ink);
+      padding: 18px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      white-space: pre;
+      overflow: auto;
+      line-height: 1.55;
+    }
+</style>
+
+<div class="eyebrow">LLM Wiki · Knowledge Architecture</div>
+<p class="lead">LLM Wiki 不是“让模型帮我总结文档”，也不是传统 RAG 的换皮。我现在的理解是：它让 LLM 持续维护一套结构化、互相链接、可被再次查询和更新的 Markdown wiki，把零散资料编译成会积累的知识层。</p>
+
+<div class="note">
+  <strong>这篇笔记的主线：</strong>先讲 Karpathy 的思想，再讲目录结构，再讲关键动作流程，最后才落到个人日记体系。日记只是这个方法论的一个应用场景，不是 LLM Wiki 的全部。
+</div>
+
+<h2>1 · Karpathy 的思想</h2>
+
+<p>Karpathy 提出 LLM Wiki，是在反思大多数人使用 LLM 和文档的方式：把一堆资料丢给系统，然后在提问时让模型检索相关片段并生成答案。这就是常见的 RAG 体验。</p>
+
+<p>RAG 有用，但它有一个隐含问题：每次回答都像重新开卷考试。模型每次都要重新找片段、重新拼上下文、重新综合判断。资料之间的关系没有被稳定沉淀下来，前一次问题里的洞察也不会自然进入下一次问题。</p>
+
+<p>LLM Wiki 的转向是：不要只在 query time 检索 raw documents，而是在资料进入系统时，就让 LLM 把资料吸收到一个持久 wiki 里。也就是说，知识不是每次问答时临时拼出来，而是平时就被编译和维护。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>问题</th>
+      <th>RAG 的做法</th>
+      <th>LLM Wiki 的做法</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>新资料来了</td>
+      <td>切 chunk，建索引，等以后检索。</td>
+      <td>阅读资料，抽取信息，更新 source/entity/concept/synthesis 页面。</td>
+    </tr>
+    <tr>
+      <td>回答问题</td>
+      <td>从 raw chunks 临时找证据。</td>
+      <td>先读 wiki 的 index 和相关页面，再必要时回到 raw source。</td>
+    </tr>
+    <tr>
+      <td>跨文档洞察</td>
+      <td>每次临时综合。</td>
+      <td>沉淀成 synthesis 页面，后续继续复用和修正。</td>
+    </tr>
+    <tr>
+      <td>维护成本</td>
+      <td>人很快懒得整理。</td>
+      <td>LLM 负责摘要、归档、交叉链接、更新索引和日志。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <p>我理解 Karpathy 的核心判断是：<strong>知识库真正难的不是存储，而是维护。</strong> 人可以读资料、提问题、做判断，但很难长期坚持更新链接、修正旧结论、整理索引、拆分页面。LLM Wiki 把这部分“簿记劳动”交给 agent。</p>
+</div>
+
+<p>所以我会把 LLM Wiki 理解成三层：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>层</th>
+      <th>含义</th>
+      <th>谁负责</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>raw sources</code></td>
+      <td>原始资料。文章、论文、日记、会议记录、网页、图片、代码仓库等。它是 source of truth。</td>
+      <td>人负责收集，LLM 只读不改。</td>
+    </tr>
+    <tr>
+      <td><code>wiki</code></td>
+      <td>LLM 生成和维护的 Markdown 知识库。里面有来源页、实体页、概念页、比较页、综合页、索引和日志。</td>
+      <td>LLM 负责写、改、链接、拆分、合并。</td>
+    </tr>
+    <tr>
+      <td><code>schema</code></td>
+      <td>规则文件，例如 <code>AGENTS.md</code> 或 <code>CLAUDE.md</code>。定义目录、页面格式、ingest/query/lint 流程。</td>
+      <td>人和 LLM 共同演化。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>这个架构对我最有启发的地方在于：raw source 是证据，wiki 是理解，schema 是维护规则。LLM Wiki 不是把原文搬运成摘要，而是把原始材料编译成更适合长期思考的知识层。</p>
+
+<h2>2 · 目录结构</h2>
+
+<p>Karpathy 原文没有规定唯一目录结构，它强调的是模式：raw sources 只读，wiki 由 LLM 维护，schema 约束 agent 行为。如果我要把这个模式落成文件系统，一个通用版本大概会长这样：</p>
+
+<div class="tree">llm-wiki/
+├── AGENTS.md                 # schema：最重要的规则文件，约束 agent 如何维护 wiki
+├── README.md                 # 给人看的项目说明：这个 wiki 的主题、边界、使用方式
+├── inbox.md                  # 待处理入口：URL、PDF、repo、笔记路径、处理深度
+├── raw/                      # 原始资料层；source of truth；LLM 只读不改
+│   ├── articles/             # 网页、博客、长文
+│   ├── papers/               # 论文、报告
+│   ├── books/                # 书籍摘录、章节笔记
+│   ├── transcripts/          # 播客、访谈、会议、视频字幕
+│   ├── notes/                # 人手写的原始笔记
+│   ├── repos/                # 代码仓库、README、设计文档
+│   └── assets/               # 图片、附件、PDF 截图等非纯文本材料
+├── wiki/                     # LLM 维护的知识层；人主要读这里
+│   ├── index.md              # 内容导航：页面列表、摘要、别名、分类、来源数
+│   ├── overview.md           # 全局概览：当前 wiki 对主题的整体理解
+│   ├── log.md                # 时间日志：ingest/query/lint/cleanup 做了什么
+│   ├── gaps.md               # 缺口清单：缺资料、缺页面、待追问的问题
+│   ├── contradictions.md     # 冲突清单：新旧资料或页面之间的不一致
+│   ├── sources/              # 来源页：一份 source 对应一张“证据卡片”
+│   ├── entities/             # 实体页：人、公司、项目、产品、地点、组织等
+│   ├── concepts/             # 概念页：方法、思想、模式、主题、技术概念
+│   ├── topics/               # 主题页：比 concept 更宽的领域或问题簇
+│   ├── comparisons/          # 比较页：多个实体、方案、观点之间的对照
+│   └── syntheses/            # 综合页：跨来源结论、重要 query 的沉淀答案
+└── state/                    # 机器状态；辅助 agent 维护，不是主要阅读层
+    ├── source_manifest.json  # source 的路径、hash、ingest 状态
+    ├── backlinks.json        # 反向链接索引，由脚本或 agent 重建
+    └── last_run.json         # 上次运行信息，避免重复处理</div>
+
+<p>这里有几种页面很容易混在一起，我会这样区分：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>页面类型</th>
+      <th>根据什么写</th>
+      <th>价值</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>source page</td>
+      <td>一份来源文档。</td>
+      <td>把原始资料标准化成可读、可引用、可追溯的证据卡片。</td>
+    </tr>
+    <tr>
+      <td>entity page</td>
+      <td>多个来源里反复出现的具名对象。</td>
+      <td>聚合这个实体的事实、变化、关系和来源。</td>
+    </tr>
+    <tr>
+      <td>concept page</td>
+      <td>多个来源里反复出现的主题、模式或方法。</td>
+      <td>把分散的观察抽象成可复用的理解。</td>
+    </tr>
+    <tr>
+      <td>synthesis page</td>
+      <td>一次重要查询或跨来源分析。</td>
+      <td>把已经做过的思考保存下来，避免下次重新推理。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Farzaa 的 personal wiki 更强调目录从资料里自然生长。它给出的参考类型非常丰富：<code>people/</code>、<code>projects/</code>、<code>places/</code>、<code>events/</code>、<code>books/</code>、<code>tools/</code>、<code>philosophies/</code>、<code>patterns/</code>、<code>tensions/</code>、<code>decisions/</code>、<code>transitions/</code>、<code>relationships/</code>、<code>skills/</code>、<code>ideas/</code> 等。但我觉得更重要的是它的克制：不要预先把目录建满，目录应该从数据里长出来。</p>
+
+<div class="note warn">
+  <strong>一个关键判断：</strong>source-centric wiki 是好起点，但不是完整终点。真正有复利的是 source page、entity page、concept page、synthesis page 一起工作。source page 保证证据，entity/concept/synthesis 页面负责沉淀理解。
+</div>
+
+<h2>3 · 关键动作流程</h2>
+
+<p>LLM Wiki 不是一个静态目录，而是一组动作。目录只是结果，真正让它有用的是 agent 每次都按固定流程维护它。换句话说，我不能只设计文件夹，还要设计 agent 怎么工作。</p>
+
+<div class="step user">
+  <span class="who user">Init</span><strong>初始化 wiki</strong>
+  <p>确定主题和边界，创建 <code>raw/</code>、<code>wiki/</code>、<code>AGENTS.md</code>、<code>index.md</code>、<code>log.md</code>。最重要的是写清楚规则：raw 不改，wiki 可改；先读 index；更新页面前必须读原页面；所有判断要保留来源。</p>
+</div>
+
+<div class="step">
+  <span class="who">Ingest</span><strong>吸收新资料</strong>
+  <p>把新资料放进 <code>raw/</code> 或 <code>inbox.md</code>。agent 读取资料，生成 source page，抽取实体和概念，更新已有 entity/concept 页面，必要时创建新页面，最后更新 index、backlinks 和 log。Karpathy 的设想里，一份重要 source 可能会影响 10 到 15 个 wiki 页面。</p>
+</div>
+
+<div class="step sub">
+  <span class="who sub">Query</span><strong>回答问题</strong>
+  <p>回答问题时不要先翻 raw。先读 <code>index.md</code>，再读 3 到 8 个相关页面，沿着 wikilink 和 related 字段扩展。答案要明确引用哪些 wiki 页面支持了判断，wiki 不知道的就说不知道。</p>
+</div>
+
+<div class="step">
+  <span class="who">Promote</span><strong>把好答案写回 wiki</strong>
+  <p>如果一次 query 产生了长期有价值的比较、判断或框架，不要让它留在聊天记录里。把它整理成 <code>syntheses/</code> 页面，再更新相关页面的链接。</p>
+</div>
+
+<div class="step bash">
+  <span class="who bash">Lint</span><strong>健康检查</strong>
+  <p>周期性检查 broken links、孤立页面、重复页面、过胖页面、过时结论、缺少来源的判断、重要概念没有页面、不同页面之间的冲突。Lint 的目的不是新增内容，而是让知识库不腐烂。</p>
+</div>
+
+<div class="step bash">
+  <span class="who bash">Cleanup</span><strong>重构和拆分</strong>
+  <p>当一个页面变成流水账，或者一个概念被塞进太多不相关页面，就要拆分、合并、重命名、修复反链。Farzaa 特别强调，文章要按主题组织，不要按日记时间线机械堆叠。</p>
+</div>
+
+<p>把这些动作串起来，我理解的 LLM Wiki 生命周期是这样的：</p>
+
+<pre><code>init
+  建目录、写规则、创建 index/log
+
+ingest source
+  raw source -> source page -> entities/concepts -> syntheses -> index/log
+
+query
+  question -> index -> relevant pages -> answer
+
+promote answer
+  useful answer -> synthesis page -> backlinks/index/log
+
+lint / cleanup
+  check drift, gaps, contradictions, broken links, stale pages</code></pre>
+
+<p>这套流程里最重要的动作其实是“更新已有页面”。如果每份资料只生成一份孤立摘要，那只是一个摘要库。LLM Wiki 的核心是：新资料进入时，它会改变旧页面，修正旧理解，增强旧链接。</p>
+
+<h2>4 · 对个人日记体系的启示</h2>
+
+<p>回到我的个人日记体系，这套思想的启发不是“把日记写得更复杂”，而是把日记放到 LLM Wiki 的三层结构里看。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>LLM Wiki 层</th>
+      <th>个人日记里的对应物</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>raw sources</code></td>
+      <td>每日原始日记、每周自我总结、聊天记录、项目记录。</td>
+    </tr>
+    <tr>
+      <td><code>wiki</code></td>
+      <td>人物、人生阶段、patterns、books、projects、decisions。</td>
+    </tr>
+    <tr>
+      <td><code>schema</code></td>
+      <td>我给 agent 写的日记流程规则，比如人物画像怎么写、什么时候更新索引、哪些判断只能放待观察点。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>我现在的“人物画像流程”已经是一个小型 LLM Wiki。它做了四件事：识别人物，读取人物索引，更新已有画像，必要时新建页面。区别只是它目前只覆盖 <code>people/</code> 这一类实体。</p>
+
+<p>按 LLM Wiki 的思路，它可以自然扩展，但不需要一次扩很多。对我来说，更合理的方式不是照搬 Farzaa 的几十个类型，而是从我平时写日记时会反复思考的问题倒推目录。第一版我会先保留这几个：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>类型</th>
+      <th>对应的问题</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>people/</code></td>
+      <td>这个人是谁？我和他发生过什么？我对他的判断有没有变化？</td>
+    </tr>
+    <tr>
+      <td><code>periods/</code></td>
+      <td>我现在处在哪个人生阶段？比如研究生阶段、创业阶段、转型阶段，它的主线是什么？</td>
+    </tr>
+    <tr>
+      <td><code>patterns/</code></td>
+      <td>我是不是反复进入同一种行为循环？触发条件、反应、结果分别是什么？</td>
+    </tr>
+    <tr>
+      <td><code>books/</code></td>
+      <td>哪些书真正影响了我的判断？它们改变了我对什么问题的看法？</td>
+    </tr>
+    <tr>
+      <td><code>projects/</code></td>
+      <td>我长期投入的项目在怎么变化？动力、阻力、阶段性判断是什么？</td>
+    </tr>
+    <tr>
+      <td><code>decisions/</code></td>
+      <td>我当时为什么做这个选择？有哪些备选方案？后来是否证明判断成立？</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note green">
+  <strong>我会采用的节奏：</strong>每天只写 raw 日记。每周总结时做一次 wiki 更新。这样既符合 Karpathy 的“持续吸收”，又不会让日记系统变成每天维护知识库的负担。
+</div>
+
+<p>所以，对我的日记体系来说，LLM Wiki 不是替代日记，而是在日记之上增加一层长期记忆。日记保存当天发生了什么，wiki 保存这些事情长期说明了什么。日记是时间流，wiki 是理解网。</p>
+
+<h2>参考资料</h2>
+
+<ul>
+  <li><a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f">Andrej Karpathy, LLM Wiki</a></li>
+  <li><a href="https://gist.github.com/farzaa/c35ac0cfbeb957788650e36aabea836d">Farzaa, Personal Knowledge Wiki / wiki-gen-skill</a></li>
+  <li><a href="https://juejin.cn/post/7625301482213130291">掘金：LLM Wiki 相关文章</a></li>
+</ul>
