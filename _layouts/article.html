@@ -34,6 +34,28 @@
         <span>article{% if page.lang %} · {{ page.lang }}{% endif %}</span>
       </div>
 
+      <nav class="article-toc" data-article-toc aria-label="本文目录" hidden>
+        <div class="article-toc__head">
+          <span>本文目录</span>
+          <span class="article-toc__status">
+            <span class="article-toc__progress" data-toc-progress></span>
+            <span class="article-toc__mode-control" data-toc-mode-control hidden>
+              <span aria-hidden="true">·</span>
+              <button class="article-toc__mode" type="button" data-toc-mode aria-label="展开完整目录" title="展开完整目录">全部</button>
+            </span>
+          </span>
+        </div>
+        <ol class="article-toc__list" data-toc-list></ol>
+      </nav>
+
+      <details class="article-toc-inline" data-article-toc-inline hidden>
+        <summary>
+          <span>本文目录</span>
+          <span class="article-toc__progress" data-toc-progress></span>
+        </summary>
+        <ol class="article-toc__list" data-toc-list></ol>
+      </details>
+
       <div class="art-body" data-lang="zh">
         {{ content }}
       </div>
@@ -58,5 +80,6 @@
     });
   </script>
   <script src="{{ '/assets/js/lang-toggle.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/article-toc.js' | relative_url }}"></script>
 </body>
 </html>

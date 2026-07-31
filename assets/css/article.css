@@ -400,3 +400,232 @@
   .art-body { font-size: 16px; }
   .art-body h2 { font-size: 22px; }
 }
+
+/* =============================================================
+   Generated article table of contents
+
+   Wide screens get a quiet persistent rail beside the reading column.
+   Narrow screens get the same generated outline as an inline disclosure,
+   where a fixed rail would compete with the text.
+============================================================= */
+
+.article-toc,
+.article-toc-inline {
+  --toc-ink: var(--ink, #1a1a1a);
+  --toc-muted: var(--muted, #6b6b6b);
+  --toc-faint: var(--faint, #9a9a9a);
+  --toc-rule: var(--rule, #e6e3dc);
+  --toc-paper: var(--bg, #ffffff);
+  --toc-soft: var(--soft, #f5f1ea);
+  --toc-accent: var(--accent, #8b3a2f);
+}
+
+.article-toc__head,
+.article-toc-inline summary {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.article-toc__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 14px;
+  color: var(--toc-ink);
+}
+
+.article-toc__progress {
+  color: var(--toc-faint);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.article-toc__status,
+.article-toc__mode-control {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.article-toc__mode-control[hidden] {
+  display: none;
+}
+
+.article-toc__mode {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--toc-faint);
+  font: inherit;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.article-toc__mode:hover,
+.article-toc__mode:focus-visible {
+  color: var(--toc-accent);
+}
+
+.article-toc__mode:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+}
+
+.article-toc__list,
+.article-toc__list ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.article-toc__section {
+  position: relative;
+  margin: 0;
+}
+
+.article-toc__link {
+  display: block;
+  border-left: 2px solid transparent;
+  color: var(--toc-muted);
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+  line-height: 1.42;
+  text-decoration: none;
+  text-wrap: pretty;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.article-toc__link:hover,
+.article-toc__link:focus-visible {
+  color: var(--toc-ink);
+}
+
+.article-toc__link--section {
+  margin-left: -17px;
+  padding: 5px 0 5px 15px;
+  font-size: 12.5px;
+  font-weight: 520;
+}
+
+.article-toc__sublist {
+  display: none;
+  margin: 2px 0 8px 0 !important;
+}
+
+.article-toc__section.is-current > .article-toc__sublist,
+.article-toc__section:hover > .article-toc__sublist,
+.article-toc__section:focus-within > .article-toc__sublist {
+  display: block;
+}
+
+.article-toc.is-expanded .article-toc__sublist {
+  display: block;
+}
+
+.article-toc__link--subsection {
+  padding: 4px 0 4px 12px;
+  font-size: 11.5px;
+  color: var(--toc-faint);
+}
+
+.article-toc__link.is-current {
+  border-left-color: var(--toc-accent);
+  color: var(--toc-accent);
+  font-weight: 600;
+}
+
+.art-body h2,
+.art-body h3 {
+  scroll-margin-top: 28px;
+}
+
+.article-toc {
+  display: none;
+}
+
+.article-toc-inline {
+  display: none;
+}
+
+@media (min-width: 1180px) {
+  .article-toc:not([hidden]) {
+    position: fixed;
+    z-index: 20;
+    top: 136px;
+    left: max(20px, calc(50vw - 610px));
+    display: block;
+    width: clamp(168px, 14vw, 210px);
+    max-height: calc(100vh - 184px);
+    padding: 2px 12px 4px 16px;
+    overflow-y: auto;
+    border-left: 1px solid var(--toc-rule);
+    background: color-mix(in srgb, var(--toc-paper) 94%, transparent);
+    scrollbar-width: thin;
+    scrollbar-color: var(--toc-rule) transparent;
+  }
+}
+
+@media (max-width: 1179px) {
+  .article-toc-inline:not([hidden]) {
+    display: block;
+    margin: -20px 0 12px;
+    border-top: 1px solid var(--toc-rule);
+    border-bottom: 1px solid var(--toc-rule);
+    color: var(--toc-ink);
+  }
+
+  .article-toc-inline summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 13px 0;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .article-toc-inline summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .article-toc-inline summary::after {
+    content: "展开";
+    color: var(--toc-faint);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-toc-inline[open] summary::after {
+    content: "收起";
+  }
+
+  .article-toc-inline .article-toc__progress {
+    margin-left: auto;
+  }
+
+  .article-toc-inline > .article-toc__list {
+    padding: 3px 0 16px;
+  }
+
+  .article-toc-inline .article-toc__link--section {
+    margin-left: 0;
+    padding-left: 10px;
+  }
+
+  .article-toc-inline .article-toc__section > .article-toc__sublist {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article-toc__link,
+  .article-toc__mode {
+    transition: none;
+  }
+}
