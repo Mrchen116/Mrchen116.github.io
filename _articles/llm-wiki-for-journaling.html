@@ -253,14 +253,53 @@ lang:  zh-CN
       overflow: auto;
       line-height: 1.55;
     }
+
+    .art-body .diagram{
+      background: var(--a-paper);
+      border: 1px solid var(--a-rule);
+      border-radius: 4px;
+      padding: 22px;
+      margin: 24px 0;
+      overflow: auto;
+    }
+
+    .art-body .diagram-title{
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--a-accent);
+      margin-bottom: 12px;
+    }
+
+    .art-body .diagram svg{
+      width: 100%;
+      min-width: 600px;
+      height: auto;
+      display: block;
+    }
+
+    .art-body .diagram svg text{
+      font-family: -apple-system, "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+    }
+
+    .art-body .figure-caption{
+      color: var(--a-muted);
+      font-size: 13.5px;
+      margin-top: 12px;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 640px) {
+      .art-body .diagram{
+        padding: 16px;
+      }
+    }
 </style>
 
 <div class="eyebrow">LLM Wiki · Knowledge Architecture</div>
 <p class="lead">LLM Wiki 不是“让模型帮我总结文档”，也不是传统 RAG 的换皮。我现在的理解是：它让 LLM 持续维护一套结构化、互相链接、可被再次查询和更新的 Markdown wiki，把零散资料编译成会积累的知识层。</p>
-
-<div class="note">
-  <strong>这篇笔记的主线：</strong>先讲 Karpathy 的思想，再讲目录结构，再讲关键动作流程，最后才落到个人日记体系。日记只是这个方法论的一个应用场景，不是 LLM Wiki 的全部。
-</div>
 
 <h2>1 · Karpathy 的思想</h2>
 
@@ -269,6 +308,73 @@ lang:  zh-CN
 <p>RAG 有用，但它有一个隐含问题：每次回答都像重新开卷考试。模型每次都要重新找片段、重新拼上下文、重新综合判断。资料之间的关系没有被稳定沉淀下来，前一次问题里的洞察也不会自然进入下一次问题。</p>
 
 <p>LLM Wiki 的转向是：不要只在 query time 检索 raw documents，而是在资料进入系统时，就让 LLM 把资料吸收到一个持久 wiki 里。也就是说，知识不是每次问答时临时拼出来，而是平时就被编译和维护。</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 1：同一批资料，综合发生在不同时间</div>
+  <svg viewBox="0 0 700 350" role="img" aria-labelledby="rag-wiki-title rag-wiki-desc">
+    <title id="rag-wiki-title">RAG 与 LLM Wiki 的处理流程对比</title>
+    <desc id="rag-wiki-desc">RAG 在每次提问时临时检索和综合，答案结束后关系不沉淀；LLM Wiki 在资料进入时维护持久 Wiki，提问时读取 Wiki，并可把有价值的答案写回。</desc>
+    <defs>
+      <marker id="rag-arrow-rust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b3a2f"/>
+      </marker>
+      <marker id="rag-arrow-ochre" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#a07020"/>
+      </marker>
+    </defs>
+
+    <rect x="8" y="14" width="684" height="142" rx="8" fill="#f5f1ea" stroke="#e6e3dc"/>
+    <text x="28" y="45" font-size="13" font-weight="700" fill="#6b6b6b">RAG</text>
+    <text x="28" y="64" font-size="11" fill="#9a9a9a">query time</text>
+
+    <rect x="110" y="50" width="135" height="62" rx="6" fill="#ffffff" stroke="#e6e3dc"/>
+    <text x="177.5" y="77" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Raw chunks</text>
+    <text x="177.5" y="97" text-anchor="middle" font-size="11.5" fill="#6b6b6b">只保存原始片段</text>
+
+    <line x1="245" y1="81" x2="285" y2="81" stroke="#8b3a2f" stroke-width="2" marker-end="url(#rag-arrow-rust)"/>
+    <text x="265" y="70" text-anchor="middle" font-size="10.5" fill="#8b3a2f">检索</text>
+
+    <rect x="286" y="50" width="154" height="62" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="363" y="77" text-anchor="middle" font-size="14" font-weight="700" fill="#a07020">临时上下文</text>
+    <text x="363" y="97" text-anchor="middle" font-size="11.5" fill="#6b6b6b">当场重新综合</text>
+
+    <line x1="440" y1="81" x2="500" y2="81" stroke="#8b3a2f" stroke-width="2" marker-end="url(#rag-arrow-rust)"/>
+    <text x="470" y="70" text-anchor="middle" font-size="10.5" fill="#8b3a2f">生成</text>
+
+    <rect x="501" y="50" width="150" height="62" rx="6" fill="#ffffff" stroke="#e6e3dc"/>
+    <text x="576" y="77" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">答案</text>
+    <text x="576" y="97" text-anchor="middle" font-size="11.5" fill="#6b6b6b">本次问答产物</text>
+    <line x1="501" y1="133" x2="651" y2="133" stroke="#9a9a9a" stroke-width="1.5" stroke-dasharray="5 5"/>
+    <text x="576" y="149" text-anchor="middle" font-size="10.5" fill="#6b6b6b">关系通常不沉淀</text>
+
+    <rect x="8" y="174" width="684" height="168" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="28" y="205" font-size="13" font-weight="700" fill="#8b3a2f">LLM WIKI</text>
+    <text x="28" y="224" font-size="11" fill="#9a9a9a">ingest time</text>
+
+    <rect x="110" y="224" width="135" height="62" rx="6" fill="#ffffff" stroke="#e6e3dc"/>
+    <text x="177.5" y="251" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Raw sources</text>
+    <text x="177.5" y="271" text-anchor="middle" font-size="11.5" fill="#6b6b6b">证据保持只读</text>
+
+    <line x1="245" y1="255" x2="285" y2="255" stroke="#8b3a2f" stroke-width="2" marker-end="url(#rag-arrow-rust)"/>
+    <text x="265" y="244" text-anchor="middle" font-size="10.5" fill="#8b3a2f">编译</text>
+
+    <rect x="286" y="214" width="154" height="82" rx="6" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="363" y="242" text-anchor="middle" font-size="14" font-weight="700" fill="#2a6470">持久 Wiki</text>
+    <text x="363" y="263" text-anchor="middle" font-size="11.5" fill="#2a6470">页面 · 链接 · 索引</text>
+    <text x="363" y="282" text-anchor="middle" font-size="11.5" fill="#6b6b6b">跨来源关系持续累积</text>
+
+    <line x1="440" y1="255" x2="500" y2="255" stroke="#8b3a2f" stroke-width="2" marker-end="url(#rag-arrow-rust)"/>
+    <text x="470" y="244" text-anchor="middle" font-size="10.5" fill="#8b3a2f">查询</text>
+
+    <rect x="501" y="224" width="150" height="62" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="576" y="251" text-anchor="middle" font-size="14" font-weight="700" fill="#4a6f3a">答案</text>
+    <text x="576" y="271" text-anchor="middle" font-size="11.5" fill="#6b6b6b">复用已有理解</text>
+
+    <path d="M 576 286 C 576 330, 395 330, 363 298" fill="none" stroke="#a07020" stroke-width="2" marker-end="url(#rag-arrow-ochre)"/>
+    <text x="485" y="327" text-anchor="middle" font-size="10.5" fill="#a07020">有长期价值的答案可以写回</text>
+  </svg>
+  <p class="figure-caption">两者都能检索原始资料，差别在于综合结果是否成为下一次查询可复用、可修正的持久知识层。</p>
+</div>
 
 <table>
   <thead>
@@ -446,20 +552,66 @@ lang:  zh-CN
 
 <p>把这些动作串起来，我理解的 LLM Wiki 生命周期是这样的：</p>
 
-<pre><code>init
-  建目录、写规则、创建 index/log
+<div class="diagram">
+  <div class="diagram-title">图 2：所有动作都回到同一份持久 Wiki</div>
+  <svg viewBox="0 0 700 450" role="img" aria-labelledby="lifecycle-title lifecycle-desc">
+    <title id="lifecycle-title">LLM Wiki 的持续维护动作</title>
+    <desc id="lifecycle-desc">初始化先建立 Wiki。之后，新资料通过 ingest 更新 Wiki，问题通过 query 读取 Wiki，有价值的答案通过 promote 写回 Wiki，lint 和 cleanup 定期检查并修复 Wiki。</desc>
+    <defs>
+      <marker id="life-arrow-rust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b3a2f"/>
+      </marker>
+      <marker id="life-arrow-plum" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a3a5c"/>
+      </marker>
+      <marker id="life-arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a6f3a"/>
+      </marker>
+      <marker id="life-arrow-neutral" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b6b6b"/>
+      </marker>
+    </defs>
 
-ingest source
-  raw source -> source page -> entities/concepts -> syntheses -> index/log
+    <rect x="242" y="14" width="216" height="44" rx="22" fill="#f5f1ea" stroke="#e6e3dc"/>
+    <text x="350" y="33" text-anchor="middle" font-size="12" font-weight="700" fill="#6b6b6b">INIT · 只做一次</text>
+    <text x="350" y="49" text-anchor="middle" font-size="10.5" fill="#6b6b6b">建目录、规则、index 与 log</text>
+    <line x1="350" y1="58" x2="350" y2="151" stroke="#6b6b6b" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#life-arrow-neutral)"/>
 
-query
-  question -> index -> relevant pages -> answer
+    <rect x="260" y="152" width="180" height="112" rx="8" fill="#e6eef0" stroke="#9ab8be" stroke-width="2"/>
+    <text x="350" y="184" text-anchor="middle" font-size="16" font-weight="700" fill="#2a6470">持久 Wiki</text>
+    <text x="350" y="208" text-anchor="middle" font-size="11.5" fill="#2a6470">index · pages · backlinks</text>
+    <line x1="292" y1="224" x2="408" y2="224" stroke="#9ab8be"/>
+    <text x="350" y="245" text-anchor="middle" font-size="11.5" fill="#6b6b6b">被持续读取，也被持续改写</text>
 
-promote answer
-  useful answer -> synthesis page -> backlinks/index/log
+    <rect x="20" y="166" width="166" height="84" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="103" y="194" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">INGEST</text>
+    <text x="103" y="216" text-anchor="middle" font-size="11.5" fill="#6b6b6b">新资料 → 来源页</text>
+    <text x="103" y="235" text-anchor="middle" font-size="11.5" fill="#6b6b6b">更新实体、概念与综合页</text>
+    <line x1="186" y1="208" x2="258" y2="208" stroke="#8b3a2f" stroke-width="2" marker-end="url(#life-arrow-rust)"/>
 
-lint / cleanup
-  check drift, gaps, contradictions, broken links, stale pages</code></pre>
+    <rect x="514" y="72" width="166" height="72" rx="6" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="597" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3a5c">QUERY</text>
+    <text x="597" y="122" text-anchor="middle" font-size="11.5" fill="#6b6b6b">问题 → index → 相关页面</text>
+    <line x1="514" y1="123" x2="441" y2="170" stroke="#7a3a5c" stroke-width="2" marker-end="url(#life-arrow-plum)"/>
+
+    <rect x="514" y="166" width="166" height="72" rx="6" fill="#ffffff" stroke="#b88aa0"/>
+    <text x="597" y="194" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3a5c">ANSWER</text>
+    <text x="597" y="216" text-anchor="middle" font-size="11.5" fill="#6b6b6b">引用页面，说明未知</text>
+    <line x1="441" y1="208" x2="512" y2="202" stroke="#7a3a5c" stroke-width="2" marker-end="url(#life-arrow-plum)"/>
+
+    <rect x="514" y="284" width="166" height="84" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="597" y="312" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">PROMOTE</text>
+    <text x="597" y="334" text-anchor="middle" font-size="11.5" fill="#6b6b6b">有价值的答案</text>
+    <text x="597" y="353" text-anchor="middle" font-size="11.5" fill="#6b6b6b">写成 synthesis 并补链接</text>
+    <path d="M 514 326 C 460 326, 432 292, 411 265" fill="none" stroke="#8b3a2f" stroke-width="2" marker-end="url(#life-arrow-rust)"/>
+
+    <rect x="242" y="360" width="216" height="72" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="350" y="388" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6f3a">LINT / CLEANUP</text>
+    <text x="350" y="410" text-anchor="middle" font-size="11.5" fill="#6b6b6b">检查漂移、冲突、断链与过时页面</text>
+    <line x1="350" y1="358" x2="350" y2="266" stroke="#4a6f3a" stroke-width="2" marker-start="url(#life-arrow-green)" marker-end="url(#life-arrow-green)"/>
+  </svg>
+  <p class="figure-caption">Init 先建立容器和规则；此后四类动作共享同一知识状态：ingest、promote、lint/cleanup 会改写它，query 主要读取它。</p>
+</div>
 
 <p>这套流程里最重要的动作其实是“更新已有页面”。如果每份资料只生成一份孤立摘要，那只是一个摘要库。LLM Wiki 的核心是：新资料进入时，它会改变旧页面，修正旧理解，增强旧链接。</p>
 
@@ -531,6 +683,83 @@ lint / cleanup
 
 <div class="note green">
   <strong>我会采用的节奏：</strong>每天只写 raw 日记。每周总结时做一次 wiki 更新。这样既符合 Karpathy 的“持续吸收”，又不会让日记系统变成每天维护知识库的负担。
+</div>
+
+<div class="diagram">
+  <div class="diagram-title">图 3：日记从“时间流”编译成“理解网”</div>
+  <svg viewBox="0 0 700 410" role="img" aria-labelledby="journal-title journal-desc">
+    <title id="journal-title">个人日记与 LLM Wiki 的关系</title>
+    <desc id="journal-desc">左侧是按日期保存的原始日记，中间的 agent 每周在 schema 约束下读取新日记，右侧把信息更新到互相链接的人物、项目、模式和决策页面。</desc>
+    <defs>
+      <marker id="journal-arrow-rust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b3a2f"/>
+      </marker>
+      <marker id="journal-arrow-ochre" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#a07020"/>
+      </marker>
+    </defs>
+
+    <text x="94" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#6b6b6b">RAW JOURNAL · 每天写</text>
+    <line x1="74" y1="62" x2="74" y2="347" stroke="#9a9a9a" stroke-width="2"/>
+
+    <circle cx="74" cy="86" r="7" fill="#ffffff" stroke="#8b3a2f" stroke-width="2"/>
+    <text x="95" y="82" font-size="11" font-weight="700" fill="#8b3a2f">周一</text>
+    <text x="95" y="99" font-size="11.5" fill="#6b6b6b">和一个人深聊</text>
+
+    <circle cx="74" cy="166" r="7" fill="#ffffff" stroke="#8b3a2f" stroke-width="2"/>
+    <text x="95" y="162" font-size="11" font-weight="700" fill="#8b3a2f">周三</text>
+    <text x="95" y="179" font-size="11.5" fill="#6b6b6b">项目遇到阻力</text>
+
+    <circle cx="74" cy="246" r="7" fill="#ffffff" stroke="#8b3a2f" stroke-width="2"/>
+    <text x="95" y="242" font-size="11" font-weight="700" fill="#8b3a2f">周五</text>
+    <text x="95" y="259" font-size="11.5" fill="#6b6b6b">发现重复反应</text>
+
+    <circle cx="74" cy="326" r="7" fill="#ffffff" stroke="#8b3a2f" stroke-width="2"/>
+    <text x="95" y="322" font-size="11" font-weight="700" fill="#8b3a2f">周日</text>
+    <text x="95" y="339" font-size="11.5" fill="#6b6b6b">做出一个选择</text>
+
+    <rect x="254" y="48" width="170" height="62" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="339" y="74" text-anchor="middle" font-size="12" font-weight="700" fill="#a07020">SCHEMA · 维护规则</text>
+    <text x="339" y="94" text-anchor="middle" font-size="11" fill="#6b6b6b">何时更新 · 如何引用 · 哪些待观察</text>
+    <line x1="339" y1="110" x2="339" y2="159" stroke="#a07020" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#journal-arrow-ochre)"/>
+
+    <rect x="254" y="160" width="170" height="116" rx="8" fill="#f5ebe6" stroke="#c9a89e" stroke-width="2"/>
+    <text x="339" y="192" text-anchor="middle" font-size="15" font-weight="700" fill="#8b3a2f">每周更新 Agent</text>
+    <text x="339" y="217" text-anchor="middle" font-size="11.5" fill="#6b6b6b">读取一周 raw 日记</text>
+    <text x="339" y="238" text-anchor="middle" font-size="11.5" fill="#6b6b6b">识别对象与变化</text>
+    <text x="339" y="259" text-anchor="middle" font-size="11.5" fill="#6b6b6b">更新已有页，必要时新建</text>
+    <line x1="180" y1="218" x2="252" y2="218" stroke="#8b3a2f" stroke-width="2" marker-end="url(#journal-arrow-rust)"/>
+    <text x="216" y="207" text-anchor="middle" font-size="10.5" fill="#8b3a2f">编译</text>
+
+    <text x="569" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#2a6470">WIKI · 持续更新</text>
+    <line x1="426" y1="218" x2="476" y2="218" stroke="#8b3a2f" stroke-width="2" marker-end="url(#journal-arrow-rust)"/>
+    <text x="451" y="207" text-anchor="middle" font-size="10.5" fill="#8b3a2f">回写</text>
+
+    <line x1="548" y1="100" x2="513" y2="197" stroke="#9ab8be" stroke-width="1.5"/>
+    <line x1="548" y1="100" x2="624" y2="200" stroke="#9ab8be" stroke-width="1.5"/>
+    <line x1="513" y1="197" x2="552" y2="310" stroke="#9ab8be" stroke-width="1.5"/>
+    <line x1="624" y1="200" x2="552" y2="310" stroke="#9ab8be" stroke-width="1.5"/>
+    <line x1="513" y1="197" x2="624" y2="200" stroke="#9ab8be" stroke-width="1.5"/>
+
+    <circle cx="548" cy="100" r="46" fill="#e6eef0" stroke="#9ab8be" stroke-width="2"/>
+    <text x="548" y="96" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">人物</text>
+    <text x="548" y="115" text-anchor="middle" font-size="10.5" fill="#6b6b6b">关系与判断变化</text>
+
+    <circle cx="513" cy="197" r="46" fill="#e6eef0" stroke="#9ab8be" stroke-width="2"/>
+    <text x="513" y="193" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">项目</text>
+    <text x="513" y="212" text-anchor="middle" font-size="10.5" fill="#6b6b6b">动力与阻力</text>
+
+    <circle cx="624" cy="200" r="46" fill="#e6eef0" stroke="#9ab8be" stroke-width="2"/>
+    <text x="624" y="196" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">模式</text>
+    <text x="624" y="215" text-anchor="middle" font-size="10.5" fill="#6b6b6b">触发与结果</text>
+
+    <circle cx="552" cy="310" r="46" fill="#e6eef0" stroke="#9ab8be" stroke-width="2"/>
+    <text x="552" y="306" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">决策</text>
+    <text x="552" y="325" text-anchor="middle" font-size="10.5" fill="#6b6b6b">理由与复盘</text>
+
+    <text x="350" y="390" text-anchor="middle" font-size="11.5" fill="#6b6b6b">原始日记保留事件顺序；Wiki 按对象和问题重组理解</text>
+  </svg>
+  <p class="figure-caption">每周维护把不同日期的事件更新进按对象组织的页面；连线表示人物、项目、模式和决策会互相影响，原始日记仍是可追溯的证据。</p>
 </div>
 
 <p>所以，对我的日记体系来说，LLM Wiki 不是替代日记，而是在日记之上增加一层长期记忆。日记保存当天发生了什么，wiki 保存这些事情长期说明了什么。日记是时间流，wiki 是理解网。</p>
