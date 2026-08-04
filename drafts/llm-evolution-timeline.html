@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM 技术演进时间线（2017–2026）</title>
+  <style>
+    /* === Chen, Zijian — Article template ===
+       站点会用 assets/css/article.css 覆盖大部分样式，
+       这里的 <style> 主要是为了让你本地双击预览也能看着舒服。
+       Jekyll 渲染时 convert.py 会把这些规则用 .art-body 作用域包起来，
+       所以你可以放心写 body { ... } / h1 { ... } 这种全局选择器。 */
+
+    :root {
+      --a-ink:       #1a1a1a;
+      --a-muted:     #6b6b6b;
+      --a-faint:     #9a9a9a;
+      --a-rule:      #e6e3dc;
+      --a-paper:     #ffffff;
+      --a-soft:      #f5f1ea;
+      --a-accent:    #8b3a2f;   /* rust — 主强调色 */
+      --a-accent-soft: #f5ebe6;
+
+      /* 语义色板 —— 见 §5 配色规范 */
+      --a-plum:    #7a3a5c; --a-plum-soft:   #f1e6ec; --a-plum-stroke:   #b88aa0;
+      --a-forest:  #4a6f3a; --a-forest-soft: #ecf0e6; --a-forest-stroke: #a8c0a0;
+      --a-ochre:   #a07020; --a-ochre-soft:  #f5ecdb; --a-ochre-stroke:  #d4a86a;
+      --a-teal:    #2a6470; --a-teal-soft:   #e6eef0; --a-teal-stroke:   #9ab8be;
+
+      --a-code-bg:    #f5f1ea;
+      --a-code-ink:   #5a2a22;
+      --a-pre-bg:     #1a1a1a;
+      --a-pre-ink:    #e4e0d4;
+    }
+
+    body {
+      max-width: 760px; margin: 0 auto; padding: 48px 24px 80px;
+      background: var(--a-paper); color: var(--a-ink);
+      font-family: "Newsreader", Georgia, "Songti SC", "Noto Serif SC", serif;
+      font-size: 17px; line-height: 1.72;
+    }
+    .eyebrow { font-family: "JetBrains Mono", monospace; font-size: 11px;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--a-accent);
+      font-weight: 500; }
+    h1 { font-size: 34px; line-height: 1.15; font-weight: 500; margin: 12px 0 16px; }
+    h2 { font-size: 26px; margin: 52px 0 14px; font-weight: 500; }
+    h3 { font-size: 18px; margin: 32px 0 10px; font-weight: 600; }
+    .lead { font-size: 19px; color: var(--a-muted); font-style: italic; margin: 0 0 24px; }
+    code { font-family: "JetBrains Mono", monospace; background: var(--a-code-bg);
+      color: var(--a-code-ink); padding: 1px 6px; border-radius: 3px; font-size: 0.88em; }
+    pre { background: var(--a-pre-bg); color: var(--a-pre-ink); padding: 16px 20px;
+      border-radius: 4px; overflow: auto; font-size: 13px; line-height: 1.6;
+      font-family: "JetBrains Mono", monospace; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0;
+      border: 1px solid var(--a-rule); border-radius: 4px; font-size: 14.5px;
+      font-family: -apple-system, "Helvetica Neue", "PingFang SC", sans-serif; }
+    th { background: var(--a-ink); color: #fff; text-align: left; padding: 10px 14px;
+      font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--a-rule); vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    blockquote { border-left: 3px solid var(--a-accent); padding-left: 18px;
+      color: var(--a-muted); font-style: italic; margin: 22px 0; }
+    .note { border-left: 4px solid var(--a-teal); background: var(--a-teal-soft);
+      padding: 14px 18px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 15px; }
+    .note.warn  { border-left-color: var(--a-ochre);  background: var(--a-ochre-soft); }
+    .note.green { border-left-color: var(--a-forest); background: var(--a-forest-soft); }
+    .callout { background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 16px 20px; margin: 18px 0; }
+    .role-card { background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 16px 20px; margin: 12px 0; }
+    .role-card h4 { margin: 0 0 8px; font-size: 15px; color: var(--a-accent); }
+    .role-card .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+      font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--a-muted); }
+    .role-card .meta span { background: var(--a-soft); padding: 2px 9px; border-radius: 3px; }
+    .step { background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-left: 4px solid var(--a-accent); padding: 14px 18px; margin: 12px 0;
+      border-radius: 0 4px 4px 0; }
+    .step.sub  { border-left-color: var(--a-plum); }
+    .step.bash { border-left-color: var(--a-forest); }
+    .step.user { border-left-color: var(--a-ochre); }
+    .step .who { display: inline-block; padding: 2px 9px; border-radius: 3px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.02em; margin-right: 8px;
+      background: var(--a-accent-soft); color: var(--a-accent); }
+    .step .who.sub  { background: var(--a-plum-soft);   color: var(--a-plum); }
+    .step .who.bash { background: var(--a-forest-soft); color: var(--a-forest); }
+    .step .who.user { background: var(--a-ochre-soft);  color: var(--a-ochre); }
+    .tree { background: var(--a-pre-bg); color: var(--a-pre-ink); padding: 18px;
+      border-radius: 4px; font-family: "JetBrains Mono", monospace; font-size: 13px;
+      white-space: pre; overflow: auto; line-height: 1.55; }
+    .diagram { background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 22px; margin: 24px 0; overflow: auto; }
+    .diagram-title { font-family: "JetBrains Mono", monospace; font-size: 12px;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-accent);
+      margin-bottom: 12px; }
+    .diagram svg { width: 100%; height: auto; display: block; }
+    .figure-caption { color: var(--a-muted); font-size: 13.5px; margin-top: 12px;
+      font-style: italic; }
+    .evi { font-family: "JetBrains Mono", monospace; font-size: 12px; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+<div class="eyebrow">LLM · 技术演进 · 证据分级综述</div>
+<h1>LLM 技术演进时间线（2017–2026）</h1>
+<p class="lead">一份可用于技术复盘、面试准备与战略判断的结构化梳理：三条并列脉络交织成因果链，并以可证伪的趋势推演收尾。</p>
+
+<h2>0 · 阅读说明：证据分级</h2>
+
+<p>本文对每条信息标注可信度，请务必区别对待：</p>
+
+<table>
+  <thead><tr><th>标记</th><th>含义</th><th>采信建议</th></tr></thead>
+  <tbody>
+    <tr><td class="evi">✅</td><td><strong>已验证事实</strong>。有一手来源（arXiv 论文、厂商官方博客/发布页、官方 changelog、权威机构报告页）。</td><td>可直接引用</td></tr>
+    <tr><td class="evi">🟡</td><td><strong>厂商自报口径</strong>。数据真实存在于官方材料，但未经独立第三方复现（尤其是基准分数、ARR、用户数）。</td><td>引用时须注明"厂商自报"</td></tr>
+    <tr><td class="evi">⚠️</td><td><strong>存疑</strong>。仅有二手来源、来源互相冲突、或只见于 AI 生成的聚合站。</td><td>不宜作为论据，仅作线索</td></tr>
+    <tr><td class="evi">🔮</td><td><strong>本文推测</strong>。作者的推断与外推，非事实陈述。</td><td>明确为观点</td></tr>
+  </tbody>
+</table>
+
+<div class="note warn">
+  <strong>方法论警告：</strong>2026 年的 AI 资讯生态中，大量"时间线/榜单"类站点（paperswithcode.co、agentmarketcap、codesota、vortx 等）由 AI 批量生成，同一指标在不同站点相差数十个百分点，且互相引用形成"证据回音壁"。本文凡涉及具体分数，一律优先回到 <strong>ARC Prize / METR / Epoch AI / swebench.com / 厂商官方发布页</strong>。检索中发现的典型污染案例已收入<a href="#appendix-b">附录 B</a>。
+</div>
+
+<h2>1 · 全景鸟瞰：六个时代</h2>
+
+<blockquote>LLM 的十年，是把<strong>人类完成一件事所需的每一个动作</strong>——举例、分步思考、查资料、用工具、复查、调度他人——<strong>逐个内化进系统</strong>的过程。每内化一环，能力上一个台阶，瓶颈也随之上移一层。</blockquote>
+
+<div class="diagram">
+  <div class="diagram-title">图 1 · 六个时代时间轴</div>
+  <svg viewBox="0 0 920 360" role="img" aria-labelledby="g1t g1d">
+    <title id="g1t">六个时代时间轴</title>
+    <desc id="g1d">2017.06 至 2026.08 的六个时代按时间长度排布；后三个时代明显压缩。</desc>
+    <!-- 时间轴 -->
+    <line x1="120" y1="340" x2="900" y2="340" stroke="#9a9a9a" stroke-width="1.5"/>
+    <line x1="205.1" y1="335" x2="205.1" y2="345" stroke="#9a9a9a"/>
+    <text x="205.1" y="358" text-anchor="middle" font-size="11" fill="#6b6b6b">2018</text>
+    <line x1="375.3" y1="335" x2="375.3" y2="345" stroke="#9a9a9a"/>
+    <text x="375.3" y="358" text-anchor="middle" font-size="11" fill="#6b6b6b">2020</text>
+    <line x1="545.5" y1="335" x2="545.5" y2="345" stroke="#9a9a9a"/>
+    <text x="545.5" y="358" text-anchor="middle" font-size="11" fill="#6b6b6b">2022</text>
+    <line x1="715.6" y1="335" x2="715.6" y2="345" stroke="#9a9a9a"/>
+    <text x="715.6" y="358" text-anchor="middle" font-size="11" fill="#6b6b6b">2024</text>
+    <line x1="885.8" y1="335" x2="885.8" y2="345" stroke="#9a9a9a"/>
+    <text x="885.8" y="358" text-anchor="middle" font-size="11" fill="#6b6b6b">2026</text>
+
+    <!-- T0 架构奠基 (foundation, accent) -->
+    <text x="12" y="88" font-size="12" font-weight="700" fill="#8b3a2f">T0 架构奠基</text>
+    <rect x="120" y="70" width="248.2" height="26" rx="5" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="372" y="88" font-size="10.5" fill="#9a9a9a">2020.05</text>
+
+    <!-- T1 规模涌现 (foundation, accent) -->
+    <text x="12" y="132" font-size="12" font-weight="700" fill="#8b3a2f">T1 规模涌现</text>
+    <rect x="368.2" y="114" width="212.7" height="26" rx="5" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="583" y="132" font-size="10.5" fill="#9a9a9a">2022.11</text>
+
+    <!-- T2 Chat 与生态 (plum) -->
+    <text x="12" y="176" font-size="12" font-weight="700" fill="#7a3a5c">T2 Chat 生态</text>
+    <rect x="580.9" y="158" width="163.1" height="26" rx="5" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="746" y="176" font-size="10.5" fill="#9a9a9a">2024.09</text>
+
+    <!-- T3 推理范式 (forest) -->
+    <text x="12" y="220" font-size="12" font-weight="700" fill="#4a6f3a">T3 推理范式</text>
+    <rect x="744.0" y="202" width="78.0" height="26" rx="5" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="824" y="220" font-size="10.5" fill="#9a9a9a">2025.08</text>
+
+    <!-- T4 Agent 工业化 (forest) -->
+    <text x="12" y="264" font-size="12" font-weight="700" fill="#4a6f3a">T4 Agent 工业化</text>
+    <rect x="822.0" y="246" width="49.6" height="26" rx="5" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="874" y="264" font-size="10.5" fill="#9a9a9a">2026.04</text>
+
+    <!-- T5 分层与治理 (ochre) -->
+    <text x="12" y="308" font-size="12" font-weight="700" fill="#a07020">T5 分层治理</text>
+    <rect x="871.6" y="290" width="28.4" height="26" rx="5" fill="#f5ecdb" stroke="#d4a86a"/>
+  </svg>
+  <p class="figure-caption">图例：<span style="background:#f5ebe6;padding:1px 8px;border-radius:3px;">T0–T1 基础期</span> <span style="background:#f1e6ec;padding:1px 8px;border-radius:3px;">T2 Chat 生态</span> <span style="background:#ecf0e6;padding:1px 8px;border-radius:3px;">T3–T4 推理/Agent</span> <span style="background:#f5ecdb;padding:1px 8px;border-radius:3px;">T5 分层治理</span>。注意后三个时代时长明显压缩，印证"能力趋同后竞争主战场加速迁移"。</p>
+</div>
+
+<h2>2 · 三线并列时间线</h2>
+
+<p>标记说明：<strong>【模】</strong> 标志性模型　<strong>【技】</strong> 标志性技术/范式　<strong>【产】</strong> 标志性产品与重大特性　<strong>【证】</strong> 关键实证研究/数据点</p>
+
+<h3>T0　架构奠基期（2017.06 – 2020.05）</h3>
+<table>
+  <thead><tr><th>日期</th><th>线</th><th>事件</th><th>突破点</th><th>证据</th></tr></thead>
+  <tbody>
+    <tr><td>2017-06-12</td><td>【技】</td><td><strong>Transformer</strong>（Google，<em>Attention Is All You Need</em>）</td><td>纯自注意力替代循环，训练可全序列并行。base 65M 参数，WMT14 EN-DE 28.4 BLEU</td><td>✅ <a href="https://arxiv.org/abs/1706.03762">arXiv:1706.03762</a></td></tr>
+    <tr><td>2018-06-11</td><td>【模】</td><td><strong>GPT-1</strong>（OpenAI）</td><td>确立"生成式预训练 + 判别式微调"两阶段范式，117M 参数</td><td>✅ <a href="https://openai.com/index/language-unsupervised/">OpenAI</a></td></tr>
+    <tr><td>2018-10-11</td><td>【模】</td><td><strong>BERT</strong>（Google）</td><td>双向 MLM，encoder 路线统治 NLU 两年。Large 340M，GLUE 80.5</td><td>✅ <a href="https://arxiv.org/abs/1810.04805">arXiv:1810.04805</a></td></tr>
+    <tr><td>2019-02-14</td><td>【模】</td><td><strong>GPT-2</strong>（OpenAI）</td><td>zero-shot 多任务；首创"分阶段发布"，1.5B 全量权重延至 11-05</td><td>✅ <a href="https://openai.com/index/better-language-models/">OpenAI</a></td></tr>
+    <tr><td>2019-09</td><td>【技】</td><td><strong>Megatron-LM</strong>（NVIDIA）</td><td>层内张量并行，单模型撑到 8.3B / 512 GPU</td><td>✅ <a href="https://arxiv.org/abs/1909.08053">arXiv:1909.08053</a></td></tr>
+    <tr><td>2019-10-23</td><td>【模】</td><td><strong>T5 + C4</strong>（Google）</td><td>所有 NLP 任务统一为 text-to-text；C4 语料约 750GB</td><td>✅ <a href="https://arxiv.org/abs/1910.10683">arXiv:1910.10683</a></td></tr>
+    <tr><td>2020-01-23</td><td>【技】</td><td><strong>Kaplan Scaling Law</strong>（OpenAI）</td><td>损失随参数/数据/算力呈幂律 → 投入产出首次可预测</td><td>✅ <a href="https://arxiv.org/abs/2001.08361">arXiv:2001.08361</a></td></tr>
+    <tr><td>2020-05-22</td><td>【技】</td><td><strong>RAG</strong>（Facebook AI，Lewis et al.）</td><td>检索器 + 生成器端到端，参数化知识首次可外挂</td><td>✅ <a href="https://arxiv.org/abs/2005.11401">arXiv:2005.11401</a></td></tr>
+    <tr><td>2020-05-28</td><td>【模】【技】</td><td><strong>GPT-3 + In-Context Learning</strong>（OpenAI）</td><td>175B / 300B token / 2048 上下文；<strong>不改权重、只给示例即完成任务</strong></td><td>✅ <a href="https://arxiv.org/abs/2005.14165">arXiv:2005.14165</a></td></tr>
+  </tbody>
+</table>
+<div class="callout"><strong>本期主线：</strong>架构收敛（decoder-only 胜出）+ 规模律奠基。GPT-3 的 ICL 是整个 LLM 时代真正的"零公里碑"——它把"每个任务训一个模型"变成"一个模型 + 一段提示"。</div>
+
+<h3>T1　规模涌现与对齐（2020.05 – 2022.11）</h3>
+<table>
+  <thead><tr><th>日期</th><th>线</th><th>事件</th><th>突破点</th><th>证据</th></tr></thead>
+  <tbody>
+    <tr><td>2021-04-20</td><td>【技】</td><td><strong>RoPE</strong> 旋转位置编码</td><td>相对位置注入，为后续长上下文外推（YaRN 等）打底</td><td>✅ <a href="https://arxiv.org/abs/2104.09864">arXiv:2104.09864</a></td></tr>
+    <tr><td>2021-06-29</td><td>【产】</td><td><strong>GitHub Copilot</strong> technical preview</td><td>首个规模化 AI 补全，"副驾驶"隐喻起点</td><td>✅ <a href="https://github.blog/news-insights/product-news/introducing-github-copilot-ai-pair-programmer/">GitHub Blog</a></td></tr>
+    <tr><td>2021-07-07</td><td>【模】</td><td><strong>Codex + HumanEval</strong>（OpenAI）</td><td>代码专用微调；12B，pass@1 28.8%</td><td>✅ <a href="https://arxiv.org/abs/2107.03374">arXiv:2107.03374</a></td></tr>
+    <tr><td>2021-09-03</td><td>【技】</td><td><strong>Instruction Tuning / FLAN</strong>（Google）</td><td>60+ 数据集改写为指令微调，zero-shot 超过 GPT-3 few-shot</td><td>✅ <a href="https://arxiv.org/abs/2109.01652">arXiv:2109.01652</a></td></tr>
+    <tr><td>2021-12-08</td><td>【模】</td><td><strong>Gopher</strong> 280B（DeepMind）</td><td>152 项系统评估：规模对知识类增益大、对推理增益小</td><td>✅ <a href="https://arxiv.org/abs/2112.11446">arXiv:2112.11446</a></td></tr>
+    <tr><td><strong>2022-01-28</strong></td><td>【技】</td><td><strong>Chain-of-Thought</strong>（Google，Wei et al.）</td><td>few-shot 示例中显式写出推理步骤，多步推理能力"涌现"</td><td>✅ <a href="https://arxiv.org/abs/2201.11903">arXiv:2201.11903</a></td></tr>
+    <tr><td><strong>2022-03-04</strong></td><td>【技】</td><td><strong>RLHF / InstructGPT</strong>（OpenAI）</td><td>SFT → 奖励模型 → PPO 三步法；1.3B 版人类偏好胜过 175B GPT-3</td><td>✅ <a href="https://arxiv.org/abs/2203.02155">arXiv:2203.02155</a></td></tr>
+    <tr><td>2022-03-21</td><td>【技】</td><td><strong>Self-Consistency</strong></td><td>采样多条 CoT 投票，用推理成本换准确率</td><td>✅ <a href="https://arxiv.org/abs/2203.11171">arXiv:2203.11171</a></td></tr>
+    <tr><td><strong>2022-03-29</strong></td><td>【技】</td><td><strong>Chinchilla Scaling Law</strong>（DeepMind）</td><td>参数:token ≈ 1:20；70B+1.4T 全面超越 Gopher 280B，纠正"只堆参数"的路线错误</td><td>✅ <a href="https://arxiv.org/abs/2203.15556">arXiv:2203.15556</a></td></tr>
+    <tr><td>2022-04-05</td><td>【模】</td><td><strong>PaLM</strong> 540B（Google）</td><td>Pathways 跨 6144 TPU v4；CoT 推理能力显著涌现</td><td>✅ <a href="https://arxiv.org/abs/2204.02311">arXiv:2204.02311</a></td></tr>
+    <tr><td>2022-05-02</td><td>【模】</td><td><strong>OPT-175B</strong>（Meta）</td><td>首个对研究者开放权重的 GPT-3 级模型，并公开训练日志</td><td>✅ <a href="https://arxiv.org/abs/2205.01068">arXiv:2205.01068</a></td></tr>
+    <tr><td>2022-05-24</td><td>【技】</td><td><strong>Zero-shot CoT</strong>（"Let's think step by step"）</td><td>一句指令触发推理，Prompt Engineering 从此"玄学化"</td><td>✅ <a href="https://arxiv.org/abs/2205.11916">arXiv:2205.11916</a></td></tr>
+    <tr><td>2022-05-27</td><td>【技】</td><td><strong>FlashAttention</strong></td><td>IO-aware 分块 + 重计算，显存降至 O(N)，长上下文的工程前提</td><td>✅ <a href="https://arxiv.org/abs/2205.14135">arXiv:2205.14135</a></td></tr>
+    <tr><td>2022-07-12</td><td>【模】</td><td><strong>BLOOM</strong> 176B（BigScience）</td><td>首个百 B 级多语言开放模型，RAIL 许可</td><td>✅ <a href="https://arxiv.org/abs/2211.05100">arXiv:2211.05100</a></td></tr>
+    <tr><td>2022-08</td><td>【模】</td><td><strong>GLM-130B</strong>（清华 KEG + 智谱）</td><td>中英双语 130B 开源，HELM 评测唯一入选的亚洲模型</td><td>✅ <a href="https://arxiv.org/abs/2210.02414">arXiv:2210.02414</a></td></tr>
+    <tr><td><strong>2022-10-06</strong></td><td>【技】</td><td><strong>ReAct</strong>（Princeton/Google）</td><td>推理与行动交错（Thought→Act→Observation），<strong>Agent 循环的原型</strong></td><td>✅ <a href="https://arxiv.org/abs/2210.03629">arXiv:2210.03629</a></td></tr>
+    <tr><td>2022-10</td><td>【产】</td><td><strong>LangChain</strong> 首次提交</td><td>编排层出现，"LLM 应用"成为一个软件品类</td><td>⚠️ 仅二手，具体日待核</td></tr>
+    <tr><td>2022-11-30</td><td>【技】</td><td><strong>投机解码</strong>（Google, Leviathan et al.）</td><td>小模型草稿 + 大模型验证，输出分布不变的加速</td><td>✅ <a href="https://arxiv.org/abs/2211.17192">arXiv:2211.17192</a></td></tr>
+    <tr><td>2022-12-15</td><td>【技】</td><td><strong>Constitutional AI / RLAIF</strong>（Anthropic）</td><td>用"宪法"原则让模型自评自改，替代部分人类标注</td><td>✅ <a href="https://arxiv.org/abs/2212.08073">arXiv:2212.08073</a></td></tr>
+  </tbody>
+</table>
+<div class="callout"><strong>本期主线：</strong>三件套备齐——<strong>ICL 解决"怎么用"、CoT 解决"怎么想"、RLHF 解决"听不听话"</strong>。Chinchilla 则在中途把整个行业从"堆参数"扳向"堆数据"，直接为两年后的"数据墙"埋雷。</div>
+
+<h3>T2　Chat 时代与生态爆发（2022.11 – 2024.09）</h3>
+<table>
+  <thead><tr><th>日期</th><th>线</th><th>事件</th><th>突破点</th><th>证据</th></tr></thead>
+  <tbody>
+    <tr><td><strong>2022-11-30</strong></td><td>【产】</td><td><strong>ChatGPT</strong>（OpenAI）</td><td>对话式产品化引爆大众市场，5 天百万、2 月 1 亿用户</td><td>✅ <a href="https://openai.com/index/chatgpt/">OpenAI</a></td></tr>
+    <tr><td>2023-02-09</td><td>【技】</td><td><strong>Toolformer</strong>（Meta）</td><td>自监督学习"何时调用 API"，工具使用首次内化进模型</td><td>✅ <a href="https://arxiv.org/abs/2302.04761">arXiv:2302.04761</a></td></tr>
+    <tr><td>2023-02-24</td><td>【模】</td><td><strong>LLaMA</strong>（Meta）</td><td>小参数 + 超量数据；权重外泄后催生整个开源生态</td><td>✅ <a href="https://arxiv.org/abs/2302.13971">arXiv:2302.13971</a></td></tr>
+    <tr><td><strong>2023-03-14</strong></td><td>【模】</td><td><strong>GPT-4</strong> / <strong>Claude 1</strong> / <strong>ChatGLM-6B</strong> 同日</td><td>GPT-4 多模态输入 + 32K；Claude 走 Constitutional AI 路线；ChatGLM 开启国产开源</td><td>✅ <a href="https://openai.com/index/gpt-4-research/">OpenAI</a> ・ <a href="https://www.anthropic.com/news/introducing-claude">Anthropic</a></td></tr>
+    <tr><td>2023-03-20</td><td>【技】</td><td><strong>Reflexion</strong></td><td>把失败转成"语言化反思"存入 episodic memory，下轮重试</td><td>✅ <a href="https://arxiv.org/abs/2303.11366">arXiv:2303.11366</a></td></tr>
+    <tr><td>2023-03～04</td><td>【产】</td><td><strong>AutoGPT / BabyAGI</strong></td><td>首次展示"全自主 agent"想象力，也首次暴露死循环与目标漂移</td><td>⚠️ 日期二手</td></tr>
+    <tr><td>2023-05-11</td><td>【模】</td><td><strong>Claude 100K 上下文</strong></td><td>长上下文首次成为核心卖点</td><td>✅ <a href="https://www.anthropic.com/news/100k-context-windows">Anthropic</a></td></tr>
+    <tr><td>2023-05-17</td><td>【技】</td><td><strong>Tree of Thoughts</strong></td><td>思维树 + 状态评估 + 回溯，线性链升维为搜索</td><td>✅ <a href="https://arxiv.org/abs/2305.10601">arXiv:2305.10601</a></td></tr>
+    <tr><td>2023-05-29</td><td>【技】</td><td><strong>DPO</strong>（Stanford）</td><td>把 RLHF 闭式化为一个分类损失，免奖励模型、免 RL</td><td>✅ <a href="https://arxiv.org/abs/2305.18290">arXiv:2305.18290</a></td></tr>
+    <tr><td><strong>2023-06-13</strong></td><td>【技】【产】</td><td><strong>Function Calling</strong>（OpenAI API）</td><td>模型输出符合 JSON Schema 的调用意图，<strong>ReAct 从提示技巧变成 API 原语</strong></td><td>✅ <a href="https://help.openai.com/en/articles/8555517">OpenAI Help</a></td></tr>
+    <tr><td>2023-07-18</td><td>【模】</td><td><strong>Llama 2</strong></td><td>开放权重且允许商用，成为开源事实标准</td><td>✅ <a href="https://arxiv.org/abs/2307.09288">arXiv:2307.09288</a></td></tr>
+    <tr><td>2023-08-31</td><td>【技】</td><td><strong>YaRN</strong></td><td>频率插值扩窗，少量微调即可外推长上下文</td><td>✅ <a href="https://arxiv.org/abs/2309.00071">arXiv:2309.00071</a></td></tr>
+    <tr><td>2023-09-12</td><td>【技】</td><td><strong>vLLM / PagedAttention</strong></td><td>借鉴 OS 分页管理 KV Cache，推理吞吐工程化</td><td>✅ <a href="https://arxiv.org/abs/2309.06180">arXiv:2309.06180</a></td></tr>
+    <tr><td>2023-09-27</td><td>【模】</td><td><strong>Mistral 7B</strong></td><td>7.3B 超越 Llama 2 13B，GQA + 滑动窗口，Apache 2.0</td><td>✅ <a href="https://mistral.ai/news/announcing-mistral-7b/">Mistral</a></td></tr>
+    <tr><td>2023-10</td><td>【技】</td><td><strong>SWE-bench</strong> 发布（2294 题）</td><td>评测从"答题"转向"改真实仓库"；基线 Claude 2 仅 <strong>1.96%</strong></td><td>✅ <a href="https://www.swebench.com/">swebench.com</a></td></tr>
+    <tr><td>2023-11-06</td><td>【模】【产】</td><td><strong>GPT-4 Turbo 128K + GPTs</strong>（DevDay）</td><td>上下文与价格双降门槛；GPTs 首次尝试"人人造 agent"</td><td>✅ <a href="https://openai.com/index/new-models-and-developer-products-announced-at-devday/">OpenAI</a></td></tr>
+    <tr><td>2023-11-21</td><td>【模】</td><td><strong>Claude 2.1 200K</strong></td><td>长上下文军备竞赛升级</td><td>✅ <a href="https://www.anthropic.com/news/claude-2-1">Anthropic</a></td></tr>
+    <tr><td>2023-12-01</td><td>【技】</td><td><strong>Mamba / SSM</strong></td><td>选择性状态空间，O(N) 推理，为 2025 的混合线性架构埋线</td><td>✅ <a href="https://arxiv.org/abs/2312.00752">arXiv:2312.00752</a></td></tr>
+    <tr><td>2023-12-06</td><td>【模】</td><td><strong>Gemini 1.0</strong>（Google DeepMind）</td><td>原生多模态（文/图/音/视频端到端训练）</td><td>✅ <a href="https://blog.google/technology/ai/google-gemini-ai/">Google</a></td></tr>
+    <tr><td>2023-12-11</td><td>【模】</td><td><strong>Mixtral 8x7B</strong>（Mistral）</td><td>首个高质量开源稀疏 MoE，46.7B 总/12.9B 激活</td><td>✅ <a href="https://mistral.ai/news/mixtral-of-experts/">Mistral</a></td></tr>
+    <tr><td>2024-02-05</td><td>【技】</td><td><strong>GRPO</strong>（DeepSeekMath）</td><td>组内相对优势替代 critic，去价值网络，RL 训练轻量化</td><td>✅ <a href="https://arxiv.org/abs/2402.03300">arXiv:2402.03300</a></td></tr>
+    <tr><td>2024-03-04</td><td>【模】</td><td><strong>Claude 3</strong>（Opus/Sonnet/Haiku）</td><td>首次三档分级发布，成为行业惯例</td><td>✅ <a href="https://www.anthropic.com/claude/opus">Anthropic</a></td></tr>
+    <tr><td><strong>2024-03-12</strong></td><td>【产】</td><td><strong>Devin</strong>（Cognition）</td><td>"首个 AI 软件工程师"，SWE-bench 13.86%（前 SOTA 1.96%），定义自主 agent 叙事</td><td>🟡 厂商自报</td></tr>
+    <tr><td>2024-04-24</td><td>【技】</td><td><strong>GraphRAG</strong>（Microsoft）</td><td>实体图 + 社区摘要，让 RAG 能回答"全局性问题"</td><td>✅ <a href="https://arxiv.org/abs/2404.16130">arXiv:2404.16130</a></td></tr>
+    <tr><td><strong>2024-05-07</strong></td><td>【模】【技】</td><td><strong>DeepSeek-V2 + MLA</strong>（DeepSeek）</td><td>多头潜在注意力压缩 KV Cache，236B/21B 激活，引发国内 API 价格战</td><td>✅ <a href="https://arxiv.org/abs/2405.04434">arXiv:2405.04434</a></td></tr>
+    <tr><td>2024-05-13</td><td>【模】</td><td><strong>GPT-4o</strong>（OpenAI）</td><td>端到端原生多模态，免费开放</td><td>✅</td></tr>
+    <tr><td>2024-06-20</td><td>【产】</td><td><strong>Artifacts</strong>（Anthropic，随 3.5 Sonnet）</td><td>对话产出可交互产物，改变了"聊天窗口"的形态边界</td><td>✅</td></tr>
+    <tr><td>2024-07-23</td><td>【模】</td><td><strong>Llama 3.1 405B</strong>（Meta）</td><td>当时最大开源权重稠密模型</td><td>✅</td></tr>
+    <tr><td><strong>2024-08-06</strong></td><td>【技】</td><td><strong>Test-time Scaling</strong>（Snell et al.）</td><td>按题目难度自适应分配推理算力，部分设置下优于扩大参数</td><td>✅ <a href="https://arxiv.org/abs/2408.03314">arXiv:2408.03314</a></td></tr>
+    <tr><td>2024-08-13</td><td>【技】</td><td><strong>SWE-bench Verified</strong>（OpenAI × 原作者）</td><td>人工校验 500 题，成为 2024-2025 的行业主基准</td><td>✅</td></tr>
+    <tr><td>2024-08-14</td><td>【技】</td><td><strong>Prompt Caching</strong>（Anthropic）</td><td>缓存不变前缀的 KV，反过来要求"上下文排序稳定"——Context Engineering 的物理动因</td><td>✅</td></tr>
+    <tr><td>2024-09-11</td><td>【产】</td><td><strong>NotebookLM Audio Overview</strong>（Google）</td><td>双人播客形态出圈，证明"新交互形态"本身就是产品力</td><td>✅</td></tr>
+  </tbody>
+</table>
+<div class="callout"><strong>本期主线：</strong>ChatGPT 把技术变成公共品，随后两年是<strong>四条并行铺开</strong>——多模态（GPT-4V/Gemini）、长上下文（100K→200K→128K）、开源生态（Llama 2/Mistral/中国全家桶）、工具调用（Function Calling → AutoGPT → Devin）。到 2024 年中，"模型会说话"已不再是问题，"模型能不能干完一件事"成了新问题。</div>
+
+<h3>T3　推理范式（2024.09 – 2025.08）</h3>
+<table>
+  <thead><tr><th>日期</th><th>线</th><th>事件</th><th>突破点</th><th>证据</th></tr></thead>
+  <tbody>
+    <tr><td><strong>2024-09-12</strong></td><td>【模】【技】</td><td><strong>o1-preview</strong>（OpenAI）</td><td>RL 训练长思维链，<strong>开辟推理时算力这条第二增长曲线</strong>。AIME 2024：GPT-4o 12% → o1 单样本 74% / 1000 样本重排 93%</td><td>✅ <a href="https://openai.com/index/learning-to-reason-with-llms/">OpenAI</a></td></tr>
+    <tr><td>2024-10-10</td><td>【产】</td><td><strong>OpenAI Swarm</strong>（实验性多 agent handoff）</td><td>多 agent 编排进入官方视野</td><td>✅</td></tr>
+    <tr><td><strong>2024-10-22</strong></td><td>【产】</td><td><strong>Computer Use</strong>（Anthropic，public beta）</td><td>首个前沿模型级别的屏幕操作 API，Agent 动作空间突破"文本"</td><td>✅</td></tr>
+    <tr><td>2024-11-22</td><td>【技】</td><td><strong>RLVR</strong>（Ai2/UW，Tülu 3 首次命名）</td><td>用确定性验证器（答案匹配/单测）替代奖励模型，消除 reward hacking</td><td>✅ <a href="https://arxiv.org/abs/2411.15124">arXiv:2411.15124</a></td></tr>
+    <tr><td><strong>2024-11-25</strong></td><td>【技】【产】</td><td><strong>MCP</strong>（Anthropic）</td><td>JSON-RPC 2.0 开放协议，解决工具接入的 N×M 爆炸</td><td>✅ <a href="https://blog.modelcontextprotocol.io/">modelcontextprotocol.io</a></td></tr>
+    <tr><td>2024-12</td><td>【证】</td><td><strong>Ilya Sutskever @ NeurIPS 2024</strong></td><td><em>"Pre-training as we know it will unquestionably end"</em>；"我们只有一个互联网"。指出三条出路：agents / 合成数据 / inference-time compute</td><td>✅ 多方一致转述</td></tr>
+    <tr><td>2024-12-11</td><td>【模】【产】</td><td><strong>Gemini 2.0 Flash + Project Mariner + Deep Research</strong></td><td>Google 同期押注原生工具调用与浏览器 agent；Deep Research 早于 OpenAI 两个月</td><td>✅</td></tr>
+    <tr><td><strong>2024-12-26</strong></td><td>【模】</td><td><strong>DeepSeek-V3</strong></td><td>671B/37B 激活 MoE，<strong>预训练成本 557.6 万美元 / 2048×H800</strong>（此数字出自 V3 报告，常被误挂在 R1 头上）</td><td>✅ 技术报告</td></tr>
+    <tr><td><strong>2025-01-20</strong></td><td>【模】</td><td><strong>DeepSeek-R1</strong></td><td><strong>MIT 协议全量开源的 o1 级推理模型</strong>；API $0.55/$2.19 每百万 token，比 o1（$15/$60）低约 96%。1/27 英伟达单日跌约 17%</td><td>✅ + 🟡</td></tr>
+    <tr><td>2025-01-23</td><td>【产】</td><td><strong>Operator</strong>（OpenAI，research preview）</td><td>计算机使用 agent 的首个消费级产品化。OSWorld 38.1% / WebVoyager 87%</td><td>🟡 厂商自报</td></tr>
+    <tr><td>2025-02-02</td><td>【产】</td><td><strong>Deep Research</strong>（OpenAI，o3 驱动）</td><td>5–30 分钟自主研究出报告，"长任务"首次成为消费级卖点</td><td>✅ <a href="https://openai.com/index/introducing-deep-research">OpenAI</a></td></tr>
+    <tr><td><strong>2025-02-24</strong></td><td>【模】【产】</td><td><strong>Claude 3.7 Sonnet + Claude Code</strong></td><td>首个"混合推理"模型（单模型内 extended thinking 开关）；Claude Code <strong>开启 CLI Agent 时代</strong></td><td>✅</td></tr>
+    <tr><td>2025-03-11</td><td>【产】</td><td><strong>OpenAI Agents SDK + Responses API</strong></td><td>Swarm 生产化</td><td>✅</td></tr>
+    <tr><td>2025-03-24</td><td>【技】</td><td><strong>ARC-AGI-2</strong> 发布</td><td>上一代 ARC-AGI-1 被 o3 于 2024-12 以 87.5% 攻破后的接力基准</td><td>✅ <a href="https://arcprize.org/leaderboard">ARC Prize</a></td></tr>
+    <tr><td>2025-04-05</td><td>【模】</td><td><strong>Llama 4 Scout/Maverick</strong>（Meta）</td><td>Scout 10M token 上下文（iRoPE）；<strong>LMArena 用未公开实验版本上榜引发刷分争议</strong></td><td>✅ + ⚠️</td></tr>
+    <tr><td>2025-04-16</td><td>【模】【产】</td><td><strong>o3 / o4-mini + Codex CLI</strong></td><td>推理模型下沉；本地终端 agent</td><td>✅</td></tr>
+    <tr><td>2025-04-29</td><td>【模】</td><td><strong>Qwen3 系列</strong>（阿里，Apache 2.0）</td><td>开源混合思考模式</td><td>✅</td></tr>
+    <tr><td>2025-05-16</td><td>【产】</td><td><strong>OpenAI Codex（云）</strong></td><td>codex-1 驱动，<strong>并行多任务云端沙箱</strong>，1–30 分钟/任务</td><td>✅ <a href="https://openai.com/index/introducing-codex">OpenAI</a></td></tr>
+    <tr><td>2025-05-22</td><td>【模】【产】</td><td><strong>Claude Opus 4 / Sonnet 4 + Claude Code GA</strong></td><td>后台长时运行 agent 成为正式产品</td><td>✅</td></tr>
+    <tr><td>2025-06</td><td>【技】</td><td><strong>Context Engineering 术语确立</strong></td><td>Tobi Lütke（06-23）→ Karpathy（06-25，"LLM=CPU，上下文窗口=RAM"）→ Simon Willison（06-27）三连推动</td><td>✅ 均有原帖</td></tr>
+    <tr><td>2025-06</td><td>【技】</td><td><strong>Anthropic 多 Agent 研究系统</strong></td><td>orchestrator-worker + 并行 subagent，内部评测比单 agent <strong>高 90.2%</strong>，但 <strong>token 用量约为普通 chat 的 15×</strong>。同期 Cognition 公开唱反调："别做多 agent"</td><td>✅ <a href="https://www.anthropic.com/engineering/multi-agent-research-system">Anthropic</a></td></tr>
+    <tr><td>2025-06-17</td><td>【模】</td><td><strong>MiniMax-M1</strong></td><td>开源混合"闪电注意力"，1M 上下文；RL 训练仅 512 GPU / 3 周 / 53.47 万美元</td><td>🟡</td></tr>
+    <tr><td>2025-06-25</td><td>【产】</td><td><strong>Gemini CLI</strong>（开源）</td><td>三大厂全部进入终端</td><td>✅</td></tr>
+    <tr><td>2025-07-11</td><td>【模】</td><td><strong>Kimi K2</strong>（月之暗面）</td><td>1T 总参/32B 激活 MoE 开源，Agent 能力标杆</td><td>✅</td></tr>
+    <tr><td>2025-07-17</td><td>【产】</td><td><strong>ChatGPT Agent</strong></td><td>合并 Operator（视觉浏览器）+ Deep Research（合成）+ 终端于一台虚拟机——<strong>能力融合节点</strong></td><td>✅</td></tr>
+    <tr><td>2025-07-28</td><td>【模】</td><td><strong>GLM-4.5</strong>（智谱）</td><td>单模型原生融合推理/编码/Agent，API ¥0.8/¥2 每百万 token</td><td>✅</td></tr>
+    <tr><td>2025-08-05</td><td>【模】</td><td><strong>gpt-oss-120b / 20b</strong>（OpenAI）</td><td><strong>自 GPT-2 以来首次开放权重</strong>，Apache 2.0</td><td>✅</td></tr>
+  </tbody>
+</table>
+<div class="callout"><strong>本期主线：</strong>o1 证明"想得久=答得对"，把 Scaling 的支点从训练搬到推理；R1 在 4 个月后把同等能力<strong>开源 + 降价 96%</strong>，直接压缩了闭源溢价窗口。此后所有厂商在半年内完成推理模型补齐，"是否会推理"不再是差异点。</div>
+
+<h3>T4　Agent 工业化（2025.08 – 2026.04）</h3>
+<table>
+  <thead><tr><th>日期</th><th>线</th><th>事件</th><th>突破点</th><th>证据</th></tr></thead>
+  <tbody>
+    <tr><td><strong>2025-08-07</strong></td><td>【模】</td><td><strong>GPT-5</strong>（OpenAI）</td><td>统一系统 + 实时路由器，<strong>"要不要推理"变成用户不可见的系统决策</strong>。400K 上下文；$1.25/$10；发布时 ChatGPT 周活 7 亿</td><td>✅ <a href="https://openai.com/index/introducing-gpt-5/">OpenAI</a></td></tr>
+    <tr><td>2025-08-21</td><td>【模】</td><td><strong>DeepSeek-V3.1</strong></td><td>单模型混合思考；思考模式输出 token 比 R1-0528 少 20–50%</td><td>✅</td></tr>
+    <tr><td>2025-09-17</td><td>【事】</td><td><strong>R1 论文登《Nature》封面</strong></td><td>主流大模型首次通过独立同行评审</td><td>✅</td></tr>
+    <tr><td><strong>2025-09-29</strong></td><td>【模】【技】</td><td><strong>DeepSeek-V3.2-Exp（DSA 稀疏注意力）</strong> + <strong>Claude Sonnet 4.5 / Agent SDK</strong> + <strong>Anthropic 官方定义 Context Engineering</strong></td><td>DSA 把注意力从 O(L²) 降到 O(L·k)，API 降价 50%+；Anthropic 正式定义"在推理过程中策划并维护最优 token 集合"，并命名 <strong>context rot</strong></td><td>✅ <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic</a></td></tr>
+    <tr><td><strong>2025-10-16</strong></td><td>【技】【产】</td><td><strong>Agent Skills</strong>（Anthropic）</td><td>SKILL.md + 渐进式披露。<strong>MCP 解决"能调什么工具"，Skills 解决"怎么把一件事做对"</strong></td><td>✅ <a href="https://www.anthropic.com/news/skills">Anthropic</a></td></tr>
+    <tr><td>2025-10-21</td><td>【产】</td><td><strong>ChatGPT Atlas</strong> 浏览器</td><td>押注"浏览器即 agent 容器"——<strong>9 个月后被证伪并关停</strong></td><td>✅</td></tr>
+    <tr><td>2025-10-22</td><td>【产】</td><td><strong>LangChain 1.0 / LangGraph 1.0</strong></td><td><code>create_agent</code> + middleware；同日宣布 1.25 亿美元 B 轮，月下载合计 9000 万</td><td>✅ <a href="https://www.langchain.com/blog/langchain-langgraph-1dot0">LangChain</a></td></tr>
+    <tr><td><strong>2025-10-29</strong></td><td>【产】</td><td><strong>Cursor 2.0 + Composer</strong></td><td>自研编码模型 + <strong>一次 prompt 起 8 个并行 agent</strong>，IDE 交互隐喻开始让位于"agent 看板"</td><td>✅</td></tr>
+    <tr><td>2025-11-18</td><td>【模】【产】</td><td><strong>Gemini 3 Pro + Antigravity 1.0</strong></td><td>GPQA Diamond 91.9%、LMArena 1501 Elo；Antigravity 为 agent-first IDE</td><td>🟡 厂商自报</td></tr>
+    <tr><td><strong>2025-11-24</strong></td><td>【模】</td><td><strong>Claude Opus 4.5</strong></td><td>SWE-bench Verified <strong>80.9%</strong>（厂商自报）/ 官方 harness 榜 76.8%；$5/$25</td><td>🟡 + ✅ <a href="https://www.swebench.com/">swebench.com</a></td></tr>
+    <tr><td>2025-12-02</td><td>【模】</td><td><strong>DeepSeek-V3.2 正式版</strong></td><td><strong>后训练 RL 算力超过预训练的 10%</strong>；Speciale 版拿下 IMO/CMO/IOI/ICPC 2025 四金</td><td>✅ <a href="https://arxiv.org/abs/2512.02556">arXiv:2512.02556</a></td></tr>
+    <tr><td><strong>2025-12-09</strong></td><td>【技】</td><td><strong>MCP 捐给 Linux Foundation / Agentic AI Foundation</strong></td><td>与 goose、AGENTS.md 同为创始项目；<strong>协议层完成去厂商化</strong></td><td>✅ <a href="https://blog.modelcontextprotocol.io/posts/2025-12-09-mcp-joins-agentic-ai-foundation/">官方</a></td></tr>
+    <tr><td>2025-12-18</td><td>【技】</td><td><strong>Agent Skills 作为开放标准发布</strong></td><td>次日 OpenAI Codex 跟进支持</td><td>✅</td></tr>
+    <tr><td>2026-01-12</td><td>【产】</td><td><strong>Anthropic Cowork</strong>（research preview）</td><td>面向非开发者的桌面通用 agent，与 Claude Code 同一 Agent SDK——<strong>同一 harness，换 GUI 换人群</strong></td><td>✅</td></tr>
+    <tr><td>2026-02-05</td><td>【模】</td><td><strong>Claude Opus 4.6</strong></td><td>1M 上下文成为旗舰标配</td><td>✅</td></tr>
+    <tr><td><strong>2026-02-11</strong></td><td>【技】</td><td><strong>Harness Engineering</strong>（OpenAI 官方文）</td><td>口号 <strong>"Humans steer. Agents execute."</strong>；披露 3→7 人团队 5 个月用 Codex 产出约 100 万行生产代码、约 1500 个 PR</td><td>🟡 <a href="https://openai.com/index/harness-engineering">OpenAI</a></td></tr>
+    <tr><td><strong>2026-02-13</strong></td><td>【模】</td><td><strong>Ring-2.5-1T</strong>（蚂蚁集团）</td><td><strong>全球首个开源混合线性架构万亿参数思考模型</strong>（1:7 MLA + Lightning Linear Attention）；32K+ 生成访存降至 1/10</td><td>🟡</td></tr>
+    <tr><td>2026-02</td><td>【产】</td><td><strong>OpenAI Codex 桌面 App</strong></td><td>"agent 指挥中心"：多线程并行 + worktree 隔离 + skills</td><td>✅</td></tr>
+    <tr><td>2026-02-19</td><td>【模】</td><td><strong>Gemini 3.1 Pro</strong></td><td>ARC-AGI-1 <strong>98.0%</strong>（$0.962/任务）→ ARC-AGI-1 实质被解决</td><td>✅ <a href="https://arcprize.org/leaderboard">ARC Prize</a></td></tr>
+    <tr><td>2026-03-24</td><td>【技】</td><td><strong>ARC-AGI-3</strong>（首个交互式版本）</td><td>150+ 环境、1000+ 关卡；发布日前沿模型全部 &lt;1%</td><td>✅</td></tr>
+  </tbody>
+</table>
+<div class="callout"><strong>本期主线：</strong>模型能力趋同，<strong>竞争主战场迁到 harness</strong>。三个标志：抽象层从 Prompt 升到 Context 再升到 Harness；协议层（MCP）与能力包（Skills）完成标准化与去厂商化；交互隐喻从"聊天/IDE"变为"并行 agent 看板"。</div>
+
+<h3>T5　能力分层与治理（2026.04 – 2026.08）</h3>
+<table>
+  <thead><tr><th>日期</th><th>线</th><th>事件</th><th>突破点</th><th>证据</th></tr></thead>
+  <tbody>
+    <tr><td><strong>2026-04-08</strong></td><td>【模】</td><td><strong>Muse Spark</strong>（Meta Superintelligence Labs）</td><td>MSL 首个模型，<strong>闭源</strong>、无公开 API；原生多模态 + 视觉思维链 + Contemplating 多子智能体并行。标志 <strong>Meta 退出前沿开放权重</strong></td><td>🟡</td></tr>
+    <tr><td><strong>2026-04-10</strong></td><td>【证】</td><td><strong>Epoch AI × METR：MirrorCode</strong></td><td>Claude Opus 4.6 在<strong>无源码</strong>条件下重实现约 16,000 行 Go 的 <code>gotree</code>，人类工程师估需 <strong>2–17 周</strong>——"AI 已能完成周级编码任务"的最硬证据</td><td>✅ <a href="https://epoch.ai/publications/mirrorcode-preliminary-results">Epoch</a></td></tr>
+    <tr><td><strong>2026-04-14</strong></td><td>【产】</td><td><strong>Codex for (almost) everything</strong>（OpenAI）</td><td>Codex 从编码工具转为<strong>通用 agent 平台</strong>：后台 computer use、内置浏览器、记忆、可跨天/周自行唤醒的自动化；<strong>每周 300 万开发者</strong></td><td>✅ <a href="https://openai.com/index/codex-for-almost-everything/">OpenAI</a></td></tr>
+    <tr><td>2026-04-16</td><td>【证】</td><td><strong>Epoch AI：能力确实在加速</strong></td><td>4 个指标中 3 个显著超线性；最佳拟合为"推理/非推理两条独立趋势"，推理模型带来一次性跃升 + <strong>2–3 倍更快斜率</strong>。但<strong>加速集中在编程与数学</strong></td><td>✅ <a href="https://epoch.ai/publications/have-ai-capabilities-accelerated">Epoch</a></td></tr>
+    <tr><td>2026-04-16</td><td>【模】</td><td><strong>Claude Opus 4.7</strong></td><td>xhigh 推理档 + Plan→Execute→Verify→Report 自验证回路</td><td>🟡 分数存在多站冲突</td></tr>
+    <tr><td>2026-04-23</td><td>【模】</td><td><strong>GPT-5.5</strong>（OpenAI）</td><td>Artificial Analysis 智能指数夺回第一、第二；<strong>但定价翻倍至 $5/$30</strong></td><td>✅ <a href="https://openai.com/zh-Hant-HK/index/introducing-gpt-5-5/">OpenAI</a></td></tr>
+    <tr><td>2026-04-24</td><td>【模】</td><td><strong>DeepSeek-V4 预览版</strong>（MIT 开源）</td><td>V4-Pro 1.6T/49B 激活，V4-Flash 284B/13B，均 1M 上下文；<strong>mxFP4 精度</strong>；首次披露在<strong>华为昇腾 NPU</strong>上验证细粒度专家并行</td><td>✅</td></tr>
+    <tr><td>2026-05-19</td><td>【产】</td><td><strong>Antigravity 2.0 + Gemini 3.5 Flash</strong>（Google I/O）</td><td>Desktop 定位"不是 IDE，是 mission control"；CLI 用 Go 重写取代 Gemini CLI</td><td>✅</td></tr>
+    <tr><td><strong>2026-05-29</strong></td><td>【证】</td><td><strong>Epoch：开源落后闭源 4 个月 / 8 个 ECI 点</strong></td><td>较 2025-10 测得的 3 个月<strong>略有扩大</strong>；Epoch 提示该差距可能被低估</td><td>✅ <a href="https://epoch.ai/data-insights/open-closed-eci-gap">Epoch</a></td></tr>
+    <tr><td>2026-06-02</td><td>【产】</td><td><strong>Windsurf → Devin Desktop</strong>（Cognition）</td><td>Agent Command Center 用 Kanban 管理所有本地+云 agent</td><td>⚠️ 二手</td></tr>
+    <tr><td><strong>2026-06-09</strong></td><td>【模】</td><td><strong>Claude Fable 5 / Mythos 5</strong>（Anthropic）</td><td><strong>在 Opus 之上开出全新能力层</strong>；两者同底座，差别只在安全护栏；Mythos 5 经 Project Glasswing 与美国政府合作定向发放。$10/$50</td><td>✅ <a href="https://www.anthropic.com/news/claude-fable-5-mythos-5">Anthropic</a></td></tr>
+    <tr><td>2026-06 上旬</td><td>【技】</td><td><strong>Loop Engineering</strong> 概念成型</td><td>导火索：Claude Code 负责人 Boris Cherny "我不再写提示词，我在写 loop"；Addy Osmani 定义：<strong>"用系统取代你这个'负责提示 agent 的人'"</strong>。组成：trigger / state / worker / verifier / reviewer / exit rule</td><td>✅ <a href="https://addyosmani.com/blog/loop-engineering">Osmani</a></td></tr>
+    <tr><td>2026-06-26</td><td>【模】</td><td><strong>GPT-5.6 限量预览</strong></td><td><strong>应美国政府要求先做小范围可信伙伴预览</strong>（配合网络安全行政令框架）；投入 70 万+ A100 等效 GPU 小时做自动化红队</td><td>✅ <a href="https://openai.com/index/previewing-gpt-5-6-sol/">OpenAI</a></td></tr>
+    <tr><td>2026-06-30</td><td>【模】【产】</td><td><strong>Claude Sonnet 5 + Claude Science</strong></td><td>Anthropic 进入 5 代序列；Claude Science 面向科研的可审计产物</td><td>✅ <a href="https://www.anthropic.com/">Anthropic</a></td></tr>
+    <tr><td><strong>2026-07-09/10</strong></td><td>【模】</td><td><strong>GPT-5.6 GA：Sol / Terra / Luna</strong></td><td><strong>命名改制：数字=代际，Sol/Terra/Luna=能力档位</strong>。新增 <strong><code>ultra</code> 多智能体并行编排</strong>。Agents' Last Exam 53.6；AA 编码 agent 指数 80</td><td>🟡 <a href="https://openai.com/index/gpt-5-6/">OpenAI</a></td></tr>
+    <tr><td><strong>2026-07-09</strong></td><td>【产】</td><td><strong>OpenAI 宣布关停 ChatGPT Atlas</strong>（8/9 下线）</td><td><strong>2026 年最重要的"产品形态证伪"</strong>：与其让用户换浏览器，不如把 agent 塞进既有产品</td><td>✅</td></tr>
+    <tr><td>2026-07-16/27</td><td>【模】</td><td><strong>Kimi K3</strong>（月之暗面，WAIC 2026）</td><td><strong>2.8 万亿总参、896 专家激活 16 个、1M 上下文，全球参数最大的开放权重模型</strong>；7/27 放出完整权重。Arena.ai 前端编程榜登顶</td><td>✅ <a href="https://www.kimi.com/blog/kimi-k3">Kimi</a></td></tr>
+    <tr><td>2026-07-17~20</td><td>【事】</td><td><strong>WAIC 2026 / 人工智能全球治理高级别会议（上海）</strong></td><td>《关于成立世界人工智能合作组织的协定》签署，<strong>29 个国家成为创始成员国</strong></td><td>✅ 新华社</td></tr>
+    <tr><td><strong>2026-07-24</strong></td><td>【模】【事】</td><td><strong>Claude Opus 5</strong> + <strong>美国多家科技企业联合声明支持开放权重</strong></td><td>Opus 5：价格不变（$5/$25）而 Frontier-Bench v0.1 性能是 Opus 4.8 的两倍以上；<strong>发布页完全不再提 SWE-bench Verified</strong>。同日微软、英伟达、Hugging Face 等联合声明支持开放权重模型</td><td>✅ <a href="https://www.anthropic.com/">Anthropic</a> ・ 新华社</td></tr>
+    <tr><td><strong>2026-07-28</strong></td><td>【技】</td><td><strong>MCP 规范最大改版</strong></td><td>无状态协议核心（弃 initialize 握手）、MRTR 多轮往返、<strong>MCP Apps</strong>（服务端渲染 UI）、<strong>Tasks</strong>（异步长任务）、企业授权 EMA、12 个月弃用政策</td><td>✅ <a href="https://blog.modelcontextprotocol.io/posts/2026-07-28/">官方</a></td></tr>
+    <tr><td>2026-07-30</td><td>【模】</td><td><strong>GPT-5.6 Luna 降价 80%、Terra 降价 20%</strong></td><td>发布后 20 天即大幅降价，价格战节奏压缩到"周"</td><td>✅ OpenAI 官方页更新</td></tr>
+    <tr><td>2026-07-31</td><td>【模】</td><td><strong>DeepSeek-V4-Flash 正式版 API 公测</strong></td><td>较 4 月预览版多项指标大幅提升，业内认为"训练方法与数据质量的作用在增加"</td><td>✅ 新华社</td></tr>
+  </tbody>
+</table>
+<div class="callout"><strong>本期主线：</strong>三件此前没有过的事同时发生——① 厂商在 Opus/GPT 之上<strong>再开一层</strong>（Fable/Mythos、Sol/Terra/Luna），能力开始被<strong>分级定价与分级发放</strong>；② <strong>政府直接进入发布流程</strong>；③ <strong>开放权重回潮</strong>——Meta 退出的同时，中国厂商成为全球主要供给方。</div>
+
+<h2>3 · 演进逻辑：痛点 → 突破 → 新瓶颈</h2>
+
+<h3>3.1 主链：补全 → Chat → CoT → 工具 → Agent → Agent 群</h3>
+
+<div class="diagram">
+  <div class="diagram-title">图 2 · 主链演进</div>
+  <svg viewBox="0 0 760 660" role="img" aria-labelledby="g2t g2d">
+    <title id="g2t">主链演进</title>
+    <desc id="g2d">补全 → Chat → CoT → 工具 → Agent → Agent 群，箭头上的文字是上一代无法解决的痛点。</desc>
+    <defs>
+      <marker id="m-rust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b3a2f"/>
+      </marker>
+    </defs>
+    <!-- box1 补全 -->
+    <rect x="170" y="30" width="420" height="78" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="380" y="66" text-anchor="middle" font-size="17" font-weight="700" fill="#8b3a2f">补全</text>
+    <text x="380" y="90" text-anchor="middle" font-size="12.5" fill="#6b6b6b">GPT-2 / GPT-3 · ICL</text>
+    <line x1="380" y1="108" x2="380" y2="130" stroke="#8b3a2f" stroke-width="2.5" marker-end="url(#m-rust)"/>
+    <text x="408" y="124" font-size="11.5" fill="#8b3a2f">提示脆弱、结果不稳</text>
+    <!-- box2 Chat -->
+    <rect x="170" y="136" width="420" height="78" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="380" y="172" text-anchor="middle" font-size="17" font-weight="700" fill="#8b3a2f">Chat</text>
+    <text x="380" y="196" text-anchor="middle" font-size="12.5" fill="#6b6b6b">InstructGPT → ChatGPT</text>
+    <line x1="380" y1="214" x2="380" y2="236" stroke="#8b3a2f" stroke-width="2.5" marker-end="url(#m-rust)"/>
+    <text x="408" y="230" font-size="11.5" fill="#8b3a2f">多步推理一步必错</text>
+    <!-- box3 CoT -->
+    <rect x="170" y="242" width="420" height="78" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="380" y="278" text-anchor="middle" font-size="17" font-weight="700" fill="#8b3a2f">CoT</text>
+    <text x="380" y="302" text-anchor="middle" font-size="12.5" fill="#6b6b6b">提示层 → o1 / R1 权重层</text>
+    <line x1="380" y1="320" x2="380" y2="342" stroke="#8b3a2f" stroke-width="2.5" marker-end="url(#m-rust)"/>
+    <text x="408" y="336" font-size="11.5" fill="#8b3a2f">不知实时信息、改不了文件</text>
+    <!-- box4 工具 -->
+    <rect x="170" y="348" width="420" height="78" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="380" y="384" text-anchor="middle" font-size="17" font-weight="700" fill="#8b3a2f">工具</text>
+    <text x="380" y="408" text-anchor="middle" font-size="12.5" fill="#6b6b6b">ReAct → Function Calling → MCP</text>
+    <line x1="380" y1="426" x2="380" y2="448" stroke="#8b3a2f" stroke-width="2.5" marker-end="url(#m-rust)"/>
+    <text x="408" y="442" font-size="11.5" fill="#8b3a2f">干不完一个任务</text>
+    <!-- box5 Agent -->
+    <rect x="170" y="454" width="420" height="78" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="380" y="490" text-anchor="middle" font-size="17" font-weight="700" fill="#8b3a2f">Agent</text>
+    <text x="380" y="514" text-anchor="middle" font-size="12.5" fill="#6b6b6b">Devin → Claude Code → Codex</text>
+    <line x1="380" y1="532" x2="380" y2="554" stroke="#8b3a2f" stroke-width="2.5" marker-end="url(#m-rust)"/>
+    <text x="408" y="548" font-size="11.5" fill="#8b3a2f">单点慢、串行、易失败</text>
+    <!-- box6 Agent 群 -->
+    <rect x="170" y="560" width="420" height="78" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="380" y="596" text-anchor="middle" font-size="17" font-weight="700" fill="#8b3a2f">Agent 群</text>
+    <text x="380" y="620" text-anchor="middle" font-size="12.5" fill="#6b6b6b">orchestrator-worker / ultra</text>
+  </svg>
+  <p class="figure-caption">箭头上的文字是"上一代无法解决的痛点"，正是它催生了下一环。</p>
+</div>
+
+<table>
+  <thead><tr><th>阶段</th><th>上一代无法解决的痛点</th><th>该技术如何突破</th><th>引入的新瓶颈</th></tr></thead>
+  <tbody>
+    <tr><td><strong>补全</strong>（GPT-2/3）</td><td>每个任务都要单独微调，标注昂贵</td><td>ICL：上下文给示例即可适配任意任务</td><td>提示脆弱、结果不稳、上下文长度受限；用户不知道"该怎么问"</td></tr>
+    <tr><td><strong>Chat</strong>（InstructGPT→ChatGPT）</td><td>模型续写而非回答，不听指令、不安全</td><td>Instruction Tuning 学格式，RLHF 学偏好</td><td>对齐税（能力被磨平）、奖励黑客、谄媚倾向、标注成本高</td></tr>
+    <tr><td><strong>CoT</strong>（2022→o1）</td><td>多步推理一步到位必错；提示词里的 CoT 是"表演"不是"能力"</td><td>先显式写出步骤（CoT）→ 再用 RL 把"想得久"训进权重（o1/R1）</td><td>延迟与成本随思考长度线性上升；思维链不可审计；<strong>只在可验证域收益最大</strong></td></tr>
+    <tr><td><strong>工具</strong>（ReAct→Function Calling→MCP）</td><td>推理再强也不知道今天的股价、改不了本地文件</td><td>ReAct 交错推理与行动 → Function Calling 变成 API 原语 → MCP 消除 N×M 集成</td><td>工具描述污染上下文；<strong>提示注入</strong>成为一等安全问题；server 质量参差与供应链风险</td></tr>
+    <tr><td><strong>Agent</strong>（Devin→Claude Code→Codex）</td><td>单轮工具调用只能干一件小事，干不完一个任务</td><td>把"循环 + 文件系统 + shell + git"给模型，允许它自行迭代到完成</td><td><strong>可靠性复利</strong>：每步 95% × 20 步 = 36%；上下文腐化（context rot）；成本失控；错误累积无人发现</td></tr>
+    <tr><td><strong>Agent 群</strong>（多 agent / ultra / swarm）</td><td>单 agent 上下文有限、串行太慢、单点失败</td><td>orchestrator-worker：主 agent 拆解，子 agent 各带独立上下文并行，压缩后回传</td><td><strong>token 用量约 15×</strong>；子 agent 之间信息不共享导致决策冲突；编排本身成为需要调试的软件</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><strong>关键争论（务必并列呈现）：</strong>2025 年 6 月 Anthropic 公布多 agent 系统内部评测比单 agent <strong>高 90.2%</strong>，同月 Cognition 公开主张"<strong>别做多 agent</strong>，用单线程线性 agent + 完整上下文共享"。到 2026 年，实践给出的答案是<strong>分场景</strong>：研究/搜索类任务（可并行、结果可合并）适合多 agent，编码类任务（强依赖、上下文需共享）更适合单主线 + 隔离 worktree。GPT-5.6 的 <code>ultra</code> 与 Meta 的 Contemplating Mode 表明，多 agent 正在从"应用层编排"下沉为"<strong>模型侧的推理时基础设施</strong>"。</div>
+
+<h3>3.2 支链 A：对齐链 —— 谁来给信号</h3>
+
+<div class="tree">SFT（人写答案）
+  → RLHF（人排序偏好，2022-03）          痛点：写答案太贵    新瓶颈：奖励黑客、标注不可扩展
+  → CAI / RLAIF（AI 按原则自评，2022-12） 痛点：人标不可扩展  新瓶颈：原则由谁定、评判模型偏置被放大
+  → DPO（免奖励模型，2023-05）           痛点：PPO 不稳且重  新瓶颈：离线数据受限、易过拟合偏好集
+  → RLVR（验证器给二元奖励，2024-11）     痛点：奖励可被刷分  新瓶颈：只覆盖可验证域
+  → GRPO / R1（纯 RL 涌现长 CoT，2025-01）痛点：CoT 标注贵    新瓶颈：可读性差、语言混杂
+  → Agentic RL（环境即数据，2025-2026）   痛点：单轮奖励不够  新瓶颈：奖励信号坍缩、turn 级信用分配</div>
+
+<div class="note warn"><strong>2026 年的实证边界：</strong>清华团队 ICLR 2026 工作扫描 11 个模型 × 5 种内在奖励，发现无监督 RLVR 普遍"先升后崩"（rise-and-fall），<strong>必须转向外部可验证奖励才能持续 scaling</strong>；ACL 2026 另一项 63 组对照实验建立 RL 后训练幂律，发现 <strong>32B 参数后边际收益递减</strong>。⚠️ 两项均为单一来源，建议以原文复核。</div>
+
+<h3>3.3 支链 B：知识链 —— 上下文里该放什么</h3>
+
+<div class="tree">参数化知识（知识锁在权重里，改不动、会过时、会幻觉）
+  → RAG（2020-05）              外挂知识、可溯源      新瓶颈：检索质量即上限，chunk 割裂语义
+  → HyDE / GraphRAG（2022-2024）解决语义不对称与全局归纳  新瓶颈：建图成本高、更新代价大
+  → Agentic RAG（2025）         检索变成多步决策      新瓶颈：token 与延迟激增、可控性下降
+  → Context Engineering（2025-06 术语 / 2025-09 Anthropic 官方定义）
+       定义："在 LLM 推理过程中策划并维护最优 token 集合的策略集"
+       四杠杆：Write（外置笔记）/ Select（即时检索）/ Compress（压缩）/ Isolate（子 agent 隔离）
+       实证：context editing + memory tools 组合带来 39% 性能提升；100 轮网页搜索 token 降 84%
+       新瓶颈：注意力预算有限（context rot）、记忆陈旧与投毒</div>
+
+<div class="note green"><strong>反直觉结论：</strong>2026-06 的 <em>Less Context, Better Agents</em> 系统证明，<strong>长程 agent 中剪枝上下文优于保留全历史</strong>——1M 上下文的意义不是"全塞进去"，而是"塞得起，但仍要选"。</div>
+
+<h3>3.4 支链 C：抽象层上移 —— 人负责的东西在变</h3>
+
+<p>这是本文认为<strong>最具解释力的一条主线</strong>。四层是嵌套关系，不是替代关系：</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 3 · 抽象层四级上移（核心主线）</div>
+  <svg viewBox="0 0 760 580" role="img" aria-labelledby="g3t g3d">
+    <title id="g3t">抽象层四级上移</title>
+    <desc id="g3d">Prompt → Context → Harness → Loop，四层嵌套，自下而上人负责的抽象层持续上移。</desc>
+    <defs>
+      <marker id="g3-plum" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7a3a5c"/></marker>
+      <marker id="g3-forest" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4a6f3a"/></marker>
+      <marker id="g3-ochre" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a07020"/></marker>
+    </defs>
+
+    <!-- Loop (ochre, top) -->
+    <rect x="240" y="30" width="280" height="100" rx="8" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="260" y="62" font-size="16" font-weight="700" fill="#a07020">Loop Engineering</text>
+    <text x="260" y="84" font-size="12" fill="#6b6b6b">2026 中 · 负责自动提示的循环</text>
+    <text x="260" y="106" font-size="12" fill="#6b6b6b">能跑对了，但每次要人按开始键</text>
+
+    <!-- Harness (forest) -->
+    <rect x="240" y="170" width="280" height="100" rx="8" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="260" y="202" font-size="16" font-weight="700" fill="#4a6f3a">Harness Engineering</text>
+    <text x="260" y="224" font-size="12" fill="#6b6b6b">2026 初 · 负责包模型的软件</text>
+    <text x="260" y="246" font-size="12" fill="#6b6b6b">知道现场了，但一次跑不对</text>
+
+    <!-- Context (plum) -->
+    <rect x="240" y="310" width="280" height="100" rx="8" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="260" y="342" font-size="16" font-weight="700" fill="#7a3a5c">Context Engineering</text>
+    <text x="260" y="364" font-size="12" fill="#6b6b6b">2025 · 负责一个窗口</text>
+    <text x="260" y="386" font-size="12" fill="#6b6b6b">模型懂意图了，但不知道现场情况</text>
+
+    <!-- Prompt (rust, bottom) -->
+    <rect x="240" y="450" width="280" height="100" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="260" y="482" font-size="16" font-weight="700" fill="#8b3a2f">Prompt Engineering</text>
+    <text x="260" y="504" font-size="12" fill="#6b6b6b">2022–2024 · 负责一句话</text>
+    <text x="260" y="526" font-size="12" fill="#6b6b6b">人写 prompt，模型听不懂意图就卡住</text>
+
+    <!-- arrows straight up: Prompt → Context → Harness → Loop -->
+    <line x1="380" y1="450" x2="380" y2="410" stroke="#7a3a5c" stroke-width="2.5" marker-end="url(#g3-plum)"/>
+    <line x1="380" y1="310" x2="380" y2="270" stroke="#4a6f3a" stroke-width="2.5" marker-end="url(#g3-forest)"/>
+    <line x1="380" y1="170" x2="380" y2="130" stroke="#a07020" stroke-width="2.5" marker-end="url(#g3-ochre)"/>
+  </svg>
+  <p class="figure-caption">图例：<span style="background:#f5ebe6;padding:1px 8px;border-radius:3px;">Prompt</span> <span style="background:#f1e6ec;padding:1px 8px;border-radius:3px;">Context</span> <span style="background:#ecf0e6;padding:1px 8px;border-radius:3px;">Harness</span> <span style="background:#f5ecdb;padding:1px 8px;border-radius:3px;">Loop</span>。四层嵌套而非替代；每突破一层瓶颈，"人该操心什么"就被推高一层。</p>
+</div>
+
+<table>
+  <thead><tr><th>层</th><th>时期</th><th>人负责什么</th><th>触发它的瓶颈</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Prompt Engineering</strong></td><td>2022–2024</td><td>写好<strong>一句话</strong></td><td>模型听不懂意图</td></tr>
+    <tr><td><strong>Context Engineering</strong></td><td>2025</td><td>策划<strong>一个窗口</strong>的信息</td><td>模型懂意图了，但不知道现场情况</td></tr>
+    <tr><td><strong>Harness Engineering</strong></td><td>2026 初</td><td>设计<strong>包住模型的那套软件</strong>（工具、hooks、验证器、记忆、沙箱）</td><td>模型知道现场了，但一次跑不对</td></tr>
+    <tr><td><strong>Loop Engineering</strong></td><td>2026 中</td><td>设计<strong>那个会自动提示 agent 的循环</strong>（trigger/state/worker/verifier/reviewer/exit rule）</td><td>单次能跑对了，但每次都要人按开始键</td></tr>
+  </tbody>
+</table>
+
+<p><strong>公式化表达</strong>：<code>Agent = Model + Harness</code>（Böckeler / martinfowler.com）；<code>System = Loop(Agent, Verifier, Exit Rule)</code>。</p>
+
+<blockquote>Hashimoto：<em>"每当你发现 agent 犯了一个错，就花时间工程化一个解决方案，让它不会再犯同样的错。"</em><br>Osmani 给 loop 层留了一个警告：<strong>没有客观停止条件的 loop 就是"一台昂贵的无限重试机"</strong>，而人类可能退化为"点开始键的人"。</blockquote>
+
+<div class="note warn"><strong>出处提示：</strong>Harness Engineering 一词的"首创者"有 Mitchell Hashimoto（2026-02-05 个人博客）与 Matt Kropp（BCG）两说，无决定性证据；本文采信"2026 年初多方几乎同时提出，OpenAI 2026-02-11 官方文使其定型"。</div>
+
+<h3>3.5 支链 D：架构链 —— 怎么把成本压下去</h3>
+
+<div class="diagram">
+  <div class="diagram-title">图 4 · 架构进化链</div>
+  <svg viewBox="0 0 920 240" role="img" aria-labelledby="g4t g4d">
+    <title id="g4t">架构进化链</title>
+    <desc id="g4d">Dense → MoE → MLA → DSA → 混合线性 → 极致稀疏+低精度，成本持续下降的物理路径。</desc>
+    <defs>
+      <marker id="g4-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2a6470"/></marker>
+    </defs>
+    <!-- nodes -->
+    <rect x="20" y="70" width="130" height="84" rx="8" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="85" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">Dense</text>
+    <text x="85" y="126" text-anchor="middle" font-size="11" fill="#6b6b6b">O(N²)·全激活</text>
+
+    <rect x="168" y="70" width="130" height="84" rx="8" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="233" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">MoE</text>
+    <text x="233" y="126" text-anchor="middle" font-size="11" fill="#6b6b6b">激活比↓约25%</text>
+
+    <rect x="316" y="70" width="130" height="84" rx="8" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="381" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">MLA</text>
+    <text x="381" y="126" text-anchor="middle" font-size="11" fill="#6b6b6b">压 KV Cache</text>
+
+    <rect x="464" y="70" width="130" height="84" rx="8" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="529" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">DSA</text>
+    <text x="529" y="126" text-anchor="middle" font-size="11" fill="#6b6b6b">O(L²)→O(L·k)</text>
+
+    <rect x="612" y="70" width="140" height="84" rx="8" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="682" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">混合线性</text>
+    <text x="682" y="126" text-anchor="middle" font-size="11" fill="#6b6b6b">万亿级验证</text>
+
+    <rect x="762" y="70" width="140" height="84" rx="8" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="832" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">极致稀疏+低精度</text>
+    <text x="832" y="126" text-anchor="middle" font-size="11" fill="#6b6b6b">mxFP4 / 适配国产</text>
+
+    <!-- arrows -->
+    <line x1="150" y1="112" x2="166" y2="112" stroke="#2a6470" stroke-width="2.5" marker-end="url(#g4-teal)"/>
+    <line x1="298" y1="112" x2="314" y2="112" stroke="#2a6470" stroke-width="2.5" marker-end="url(#g4-teal)"/>
+    <line x1="446" y1="112" x2="462" y2="112" stroke="#2a6470" stroke-width="2.5" marker-end="url(#g4-teal)"/>
+    <line x1="594" y1="112" x2="610" y2="112" stroke="#2a6470" stroke-width="2.5" marker-end="url(#g4-teal)"/>
+    <line x1="752" y1="112" x2="760" y2="112" stroke="#2a6470" stroke-width="2.5" marker-end="url(#g4-teal)"/>
+  </svg>
+  <p class="figure-caption">成本下降的物理路径：从全参数稠密到稀疏 MoE，再到压 KV Cache 的 MLA、降复杂度的 DSA、混合线性，最后叠加极致稀疏与低精度（并顺带适配国产芯片）。MiniMax M2 退回全注意力是该链路的已知反例。</p>
+</div>
+
+<div class="tree">Dense Transformer（O(N²) 注意力 + 全参数激活）
+  → MoE（2017 提出 / 2023-12 Mixtral 开源验证）      激活比从 100% 降到约 25%
+  → MLA（DeepSeek-V2, 2024-05）                     压 KV Cache，直接引爆国内价格战
+  → 稀疏注意力 DSA（DeepSeek V3.2, 2025-09）          O(L²) → O(L·k)，128K 解码单价降约 2/3
+  → 混合线性注意力（2025-2026）                       Qwen3-Next / Kimi Linear / MiniMax /
+                                                     蚂蚁 Ring-2.5-1T（1:7 混合，万亿参数级验证）
+  → 极致稀疏 + 低精度（2026）                         Kimi K3 激活 16/896（约 0.6%）；
+                                                    DeepSeek V4 mxFP4；Kimi K3 MXFP8 QAT</div>
+
+<div class="note warn"><strong>必须记录的反例：</strong>MiniMax M2（2025 年末）<strong>退回全注意力</strong>，团队称线性注意力在推理与多轮任务上精度不佳。这说明混合线性路线<strong>尚未定论</strong>，2026 年蚂蚁 Ring-2.5-1T 在万亿量级的成功是目前最硬的正面工程证据，但仍非终局。</div>
+
+<p>低精度（mxFP4/MXFP8）在 2026 年还有一层地缘含义：它同时是<strong>适配国产芯片</strong>的路径——DeepSeek V4 首次披露在英伟达 GPU 与华为昇腾 NPU 上验证细粒度专家并行。</p>
+
+<h2>4 · 量化证据面板</h2>
+
+<div class="note">这一节是全文的"硬骨头"。所有数字均标注来源与口径，<strong>跨口径的数字不可直接比较</strong>。</div>
+
+<h3>4.1 成本坍缩（Epoch AI 官方 trends，数据更新至 2026-04-15）</h3>
+<table>
+  <thead><tr><th>指标</th><th>数值</th><th>半衰期/倍增期</th><th>90% 置信区间</th></tr></thead>
+  <tbody>
+    <tr><td><strong>固定能力下的推理价格</strong></td><td><strong>↓ 40×/年</strong>（约 2 个数量级/年）</td><td>每 <strong>2 个月</strong>减半</td><td>10×–900×/年</td></tr>
+    <tr><td>前沿语言模型训练算力</td><td>↑ 5×/年</td><td>5.2 个月</td><td>4×–6×</td></tr>
+    <tr><td>预训练算法效率</td><td>↑ 3.0×/年</td><td>7.6 个月</td><td>2.8×–4.4×</td></tr>
+    <tr><td>每美元 FLOP/s（硬件）</td><td>↑ 1.37×/年</td><td>2.2 年</td><td>1.30×–1.45×</td></tr>
+  </tbody>
+</table>
+<div class="note"><strong>Epoch 明确提示：</strong>降幅因任务而异（9×–900×/年），不宜用单一数字。交叉印证：a16z "LLMflation"（2024-11）称 GPT-3 级能力三年降 1000 倍（$60 → $0.06 每百万 token）；Stanford AI Index 2025 称 GPT-3.5 级查询成本 18 个月降 280 倍。</div>
+
+<h3>4.2 能力跃迁：SWE-bench Verified 爬升曲线</h3>
+<table>
+  <thead><tr><th>时间</th><th>系统</th><th>分数（厂商自报 🟡）</th></tr></thead>
+  <tbody>
+    <tr><td>2023-10</td><td>Claude 2（无 agent 脚手架）</td><td><strong>1.96%</strong>（全集）</td></tr>
+    <tr><td>2024-03</td><td>Devin</td><td>13.86%（全集）</td></tr>
+    <tr><td>2024-09</td><td>OpenAI o1</td><td>48.9%</td></tr>
+    <tr><td>2025-02</td><td>Claude 3.7 Sonnet</td><td>62.3%</td></tr>
+    <tr><td>2025-05</td><td>Claude Sonnet 4</td><td>72.7%</td></tr>
+    <tr><td>2025-08</td><td>GPT-5</td><td>74.9%</td></tr>
+    <tr><td>2025-09</td><td>Claude Sonnet 4.5</td><td>77.2%</td></tr>
+    <tr><td><strong>2025-11</strong></td><td><strong>Claude Opus 4.5</strong></td><td><strong>80.9%</strong></td></tr>
+    <tr><td>2026-02</td><td>Claude Opus 4.6 / Gemini 3.1 Pro</td><td>80.8% / 80.6%</td></tr>
+  </tbody>
+</table>
+
+<div class="diagram">
+  <div class="diagram-title">图 5 · SWE-bench Verified 爬升曲线（厂商自报口径）</div>
+  <svg viewBox="0 0 880 420" role="img" aria-labelledby="g5t g5d">
+    <title id="g5t">SWE-bench Verified 爬升曲线</title>
+    <desc id="g5d">2023-10 到 2025-11 的分数从 1.96% 爬升到 80.9%，其后明显走平。</desc>
+    <!-- axes -->
+    <line x1="70" y1="30" x2="70" y2="360" stroke="#9a9a9a" stroke-width="1.5"/>
+    <line x1="70" y1="360" x2="850" y2="360" stroke="#9a9a9a" stroke-width="1.5"/>
+    <!-- y gridlines -->
+    <line x1="70" y1="290" x2="850" y2="290" stroke="#e6e3dc" stroke-dasharray="4 4"/>
+    <line x1="70" y1="220" x2="850" y2="220" stroke="#e6e3dc" stroke-dasharray="4 4"/>
+    <line x1="70" y1="150" x2="850" y2="150" stroke="#e6e3dc" stroke-dasharray="4 4"/>
+    <line x1="70" y1="80" x2="850" y2="80" stroke="#e6e3dc" stroke-dasharray="4 4"/>
+    <text x="60" y="364" text-anchor="end" font-size="11" fill="#6b6b6b">0</text>
+    <text x="60" y="294" text-anchor="end" font-size="11" fill="#6b6b6b">20</text>
+    <text x="60" y="224" text-anchor="end" font-size="11" fill="#6b6b6b">40</text>
+    <text x="60" y="154" text-anchor="end" font-size="11" fill="#6b6b6b">60</text>
+    <text x="60" y="84" text-anchor="end" font-size="11" fill="#6b6b6b">80</text>
+    <!-- polyline -->
+    <polyline points="70,352.8 181.4,309.2 292.9,180.7 404.3,131.6 515.7,93.4 627.1,85.4 738.6,76.9 850,63.4"
+      fill="none" stroke="#8b3a2f" stroke-width="2.5"/>
+    <!-- points -->
+    <g fill="#8b3a2f">
+      <circle cx="70" cy="352.8" r="3.5"/><circle cx="181.4" cy="309.2" r="3.5"/>
+      <circle cx="292.9" cy="180.7" r="3.5"/><circle cx="404.3" cy="131.6" r="3.5"/>
+      <circle cx="515.7" cy="93.4" r="3.5"/><circle cx="627.1" cy="85.4" r="3.5"/>
+      <circle cx="738.6" cy="76.9" r="3.5"/><circle cx="850" cy="63.4" r="3.5"/>
+    </g>
+    <!-- x labels -->
+    <g font-size="11" fill="#6b6b6b" text-anchor="middle">
+      <text x="70" y="378">23-10</text><text x="181.4" y="378">24-03</text>
+      <text x="292.9" y="378">24-09</text><text x="404.3" y="378">25-02</text>
+      <text x="515.7" y="378">25-05</text><text x="627.1" y="378">25-08</text>
+      <text x="738.6" y="378">25-09</text><text x="850" y="378">25-11</text>
+    </g>
+    <!-- last value -->
+    <text x="850" y="52" text-anchor="middle" font-size="11" font-weight="700" fill="#8b3a2f">80.9%</text>
+  </svg>
+  <p class="figure-caption">横轴为时间、纵轴为分数。2025-11 之后曲线明显走平——这正是该基准在 2026-07 被 Opus 5 发布页弃用的直观原因。统一 harness 口径下同一模型约低 5 个百分点。</p>
+</div>
+
+<ol>
+  <li><strong>✅ 官方统一 harness 的分数明显更低</strong>。swebench.com 用 mini-swe-agent 2.0.0 统一脚手架：Opus 4.5 <strong>76.8%</strong>、Opus 4.6 <strong>75.6%</strong>、GPT-5.2 72.8%、Gemini 3 Pro 69.6%。<strong>同一模型 5 个百分点的差距，全部来自脚手架</strong>——这个结论比绝对分数重要得多。</li>
+  <li><strong>✅ 该基准已退出前沿叙事</strong>。2026-07-24 的 Claude Opus 5 发布页<strong>完全没有提 SWE-bench Verified</strong>，改用 Frontier-Bench v0.1、CursorBench 3.2、OSWorld 2.0、ARC-AGI-3、GDPval-AA。</li>
+  <li>⚠️ 网上流传的 2026 年 87.6% / 88.6% / 95.5% 等分数均来自 AI 生成聚合站，互相矛盾，<strong>本文不予采信</strong>。</li>
+</ol>
+
+<h3>4.3 长任务能力：METR 时间跨度（最易被误用的一张图）</h3>
+<ul>
+  <li>✅ <strong>长期趋势：50% 成功率任务时长每 6–7 个月翻倍</strong>；线性外推 → 2030 年达 1 个月（167 工作小时）。</li>
+  <li>✅ <strong>Claude Opus 4.5 ≈ 4 小时 49 分</strong>（95% CI：1h49m – 20h25m）；<strong>Opus 4.6 ≈ 12 小时</strong>（95% CI：5h19m – 66h）。</li>
+  <li>✅ METR 官方页（更新至 2026-05-08）警告：<strong>超过 16 小时的测量在当前任务套件下不可靠</strong>。</li>
+</ul>
+<div class="note warn"><strong>METR 自己坚持的四条限定：</strong>① 误差棒历来各方向约 2 倍；② 跨域差异达数量级——视觉计算机操作比软件低 40–100 倍；③ 50% 时间跨度 ≠ AI 可独立工作时长；④ 99% 可靠度的时间跨度根本无法拟合。⚠️ 广为流传的"倍增周期已缩短至 4 个月 / 89 天""Opus 4.6 达 14.5 小时"等说法<strong>未在 METR 一手页面找到</strong>。</div>
+
+<h3>4.4 基准饱和速度（ARC Prize 一手榜单，截至 2026-07）</h3>
+<table>
+  <thead><tr><th>基准</th><th>推出</th><th>当前 SOTA</th><th>寿命</th></tr></thead>
+  <tbody>
+    <tr><td>ARC-AGI-1</td><td>2019</td><td>Gemini 3.1 Pro <strong>98.0%</strong>（2026-02，$0.962/任务）</td><td>约 7 年</td></tr>
+    <tr><td>ARC-AGI-2</td><td>2025-03</td><td>GPT-5.6 Sol (Max) <strong>92.5%</strong>（2026-07-09，$1.44/任务）</td><td><strong>约 16 个月</strong></td></tr>
+    <tr><td>ARC-AGI-3（交互式）</td><td>2026-03</td><td>Claude Opus 5 (High) <strong>30.2%</strong>，多数模型 &lt;8%</td><td>当前最大人机差距</td></tr>
+    <tr><td>SWE-bench Verified</td><td>2024-08</td><td>顶部聚集 &gt;80% 后被前沿厂商弃用</td><td>约 24 个月</td></tr>
+  </tbody>
+</table>
+<p>Stanford AI Index 2026 的对应表述：<strong>HLE 一年内提升 30 个百分点</strong>；"原本设计要撑数年的评测正在数月内饱和"。</p>
+
+<h3>4.5 能力—采纳缺口（2026 年最重要的结构性张力）</h3>
+<table>
+  <thead><tr><th>侧面</th><th>数据</th><th>来源</th></tr></thead>
+  <tbody>
+    <tr><td>能力侧</td><td>Terminal-Bench 真实任务成功率 20%（2025）→ <strong>77.3%</strong>；OSWorld 12% → 66.3%；网络安全任务 15% → <strong>93%</strong></td><td>✅ AI Index 2026</td></tr>
+    <tr><td>能力侧（反例）</td><td>ClockBench 认读模拟时钟仅 <strong>50.1%</strong>（人类 90.1%）；机器人真实家务成功率 <strong>12%</strong>——官方定性为"锯齿状（jagged）"</td><td>✅ AI Index 2026</td></tr>
+    <tr><td>采纳侧</td><td>MIT NANDA：<strong>95% 组织在 AI 投资上看到的可衡量回报为零</strong>，瓶颈是工作流集成与组织对齐<strong>而非模型质量</strong></td><td>✅ 工作论文</td></tr>
+    <tr><td>采纳侧</td><td>Deloitte 仅 <strong>11%</strong> 进入生产；Cleanlab 严格口径 <strong>5.2%</strong>；LangChain 自家调查称 57.3%（<strong>样本自选偏差严重</strong>）</td><td>⚠️ 口径混乱</td></tr>
+    <tr><td>采纳侧</td><td>Gartner：到 2027 年底 <strong>&gt;40% 的 agentic AI 项目将被取消</strong></td><td>✅ Gartner</td></tr>
+    <tr><td>生产力</td><td>METR RCT（2025-07）：有经验的开源开发者用 AI 后<strong>慢了 19%</strong>，且自我感觉更快</td><td>✅ <a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/">METR</a></td></tr>
+  </tbody>
+</table>
+
+<p><strong>可靠性复利数学</strong>（解释这个缺口的核心公式）：每步 95% 可靠 × 5 步 = 77%；10 步 = 60%；<strong>20 步 = 36%</strong>；30 步 = 21%。Demo 通常 3–5 步，生产工作流 15–30 步。</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 6 · 可靠性复利曲线</div>
+  <svg viewBox="0 0 880 380" role="img" aria-labelledby="g6t g6d">
+    <title id="g6t">可靠性复利曲线</title>
+    <desc id="g6d">每步 95% 可靠的累计概率随任务步数从 95% 衰减到 21%。</desc>
+    <line x1="70" y1="30" x2="70" y2="330" stroke="#9a9a9a" stroke-width="1.5"/>
+    <line x1="70" y1="330" x2="850" y2="330" stroke="#9a9a9a" stroke-width="1.5"/>
+    <line x1="70" y1="255" x2="850" y2="255" stroke="#e6e3dc" stroke-dasharray="4 4"/>
+    <line x1="70" y1="180" x2="850" y2="180" stroke="#e6e3dc" stroke-dasharray="4 4"/>
+    <line x1="70" y1="105" x2="850" y2="105" stroke="#e6e3dc" stroke-dasharray="4 4"/>
+    <text x="60" y="334" text-anchor="end" font-size="11" fill="#6b6b6b">0</text>
+    <text x="60" y="259" text-anchor="end" font-size="11" fill="#6b6b6b">25</text>
+    <text x="60" y="184" text-anchor="end" font-size="11" fill="#6b6b6b">50</text>
+    <text x="60" y="109" text-anchor="end" font-size="11" fill="#6b6b6b">75</text>
+    <polyline points="70,45 265,99 460,150 655,222 850,267" fill="none" stroke="#8b3a2f" stroke-width="2.5"/>
+    <g fill="#8b3a2f">
+      <circle cx="70" cy="45" r="3.5"/><circle cx="265" cy="99" r="3.5"/>
+      <circle cx="460" cy="150" r="3.5"/><circle cx="655" cy="222" r="3.5"/>
+      <circle cx="850" cy="267" r="3.5"/>
+    </g>
+    <g font-size="11.5" fill="#6b6b6b" text-anchor="middle">
+      <text x="70" y="348">1步</text><text x="265" y="348">5步</text>
+      <text x="460" y="348">10步</text><text x="655" y="348">20步</text><text x="850" y="348">30步</text>
+    </g>
+    <text x="70" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#8b3a2f">95%</text>
+    <text x="850" y="258" text-anchor="middle" font-size="11" font-weight="700" fill="#8b3a2f">21%</text>
+  </svg>
+  <p class="figure-caption">横轴为任务步数、纵轴为"全部步骤都正确"的累计概率。Demo 通常 3–5 步（仍 &gt;80%），生产工作流 15–30 步直接掉到 20–40%——这就是"演示惊艳、上线拉胯"的全部数学。</p>
+</div>
+
+<h3>4.6 物理约束：算力与电力（2026 年最大的公开分歧）</h3>
+<ul>
+  <li>✅ AI Index 2026：全球 AI 算力自 2022 年起 <strong>3.3×/年</strong>，已达 <strong>1,710 万块 H100 等效</strong>；AI 数据中心电力容量 <strong>29.6 GW</strong>。</li>
+  <li>✅ Morgan Stanley（2026-04）：2025–2028 美国数据中心<strong>电力缺口约 55 GW</strong>，已有 180 亿美元项目取消、460 亿美元延期。</li>
+  <li>✅ Bank of America（2026-07-08）：2026–2030 美国需求 ≥230 GW vs 可供 93 GW，<strong>缺口约 100 GW</strong>。</li>
+  <li>✅ <strong>反方</strong>：Epoch AI 认为"<strong>电力在 2028 年前不太可能成为瓶颈</strong>"，且训练已开始跨数据中心地理分布。</li>
+</ul>
+<div class="note warn"><strong>最值得跟踪的一处分歧：</strong>投行说 2027 撞墙，Epoch 说 2028 无虞。它将在 18 个月内被现实裁决。</div>
+
+<h2>5 · 五条发展规律</h2>
+
+<h3>规律一：Scaling 的支点每 2–3 年迁移一次，但总投入从未下降</h3>
+<div class="tree">2020–2022  预训练参数（Kaplan）→ 预训练数据（Chinchilla）
+2022–2024  后训练对齐（RLHF/DPO）
+2024–2025  推理时算力（o1 test-time scaling）
+2025–2026  后训练 RL 算力（DeepSeek V3.2：RL 算力 &gt; 预训练的 10%）
+2026–      Agent 循环时算力（多 agent 并行 / 长任务 / ultra 模式）</div>
+<p>每次"某某 scaling 撞墙"的论调出现后，新的支点就会接管增长。Ilya 在 2024 年底说"预训练将终结"，同时点名的三条出路（agents、合成数据、inference-time compute）<strong>在其后 18 个月内全部兑现</strong>。</p>
+<div class="note green"><strong>推论：</strong>不要问"scaling 是否还有效"，要问"<strong>下一个支点在哪里</strong>"。</div>
+
+<h3>规律二：每一次能力跃迁，都是把人类工作流的某一环内化进系统</h3>
+<table>
+  <thead><tr><th>人类的动作</th><th>被内化的时间</th><th>内化形式</th></tr></thead>
+  <tbody>
+    <tr><td>举例说明</td><td>2020</td><td>In-Context Learning</td></tr>
+    <tr><td>分步思考</td><td>2022 → 2024</td><td>CoT（提示层）→ o1/R1（权重层）</td></tr>
+    <tr><td>听懂偏好</td><td>2022</td><td>RLHF / CAI</td></tr>
+    <tr><td>查资料</td><td>2020 → 2025</td><td>RAG → Agentic RAG</td></tr>
+    <tr><td>用工具</td><td>2022 → 2024</td><td>ReAct → Function Calling → MCP</td></tr>
+    <tr><td>复查与返工</td><td>2023 → 2026</td><td>Reflexion → Verifier / 自验证回路（Opus 4.7 的 Plan→Execute→Verify→Report）</td></tr>
+    <tr><td>按方法做事</td><td>2025</td><td>Agent Skills</td></tr>
+    <tr><td>调度他人</td><td>2025 → 2026</td><td>多 agent → GPT-5.6 <code>ultra</code> / Meta Contemplating</td></tr>
+    <tr><td><strong>按开始键</strong></td><td>2026</td><td><strong>Loop Engineering</strong></td></tr>
+  </tbody>
+</table>
+<div class="note green"><strong>推论：</strong>想预测下一个突破，就问"<strong>人类在这个流程里还剩哪个动作没被内化</strong>"。目前剩下的主要是：定义什么值得做、判断结果好不好、承担后果。</div>
+
+<h3>规律三：可验证性决定进步速率——加速是真实的，但是域特异的</h3>
+<p>Epoch AI 2026-04-16 给出目前最严谨的裁决：<strong>4 个能力指标中 3 个显著加速</strong>，最佳拟合是"推理模型 / 非推理模型两条独立趋势"，推理模型带来一次性跃升 + 2–3 倍更快的斜率；<strong>但第 4 个指标（资源受限的 WeirdML V2）完全无加速</strong>。</p>
+<p>原因链条清晰：<strong>RLVR 只在有确定性验证器的域奏效 → 编程与数学天然可验证 → 这两个域获得 RL 加持 → 其余域只能吃预训练与蒸馏的余荫</strong>。这解释了 AI Index 2026 观察到的"锯齿状能力"：网络安全任务 93%，而认读模拟时钟只有 50.1%。</p>
+<div class="note green"><strong>推论：</strong>一个任务能被 AI 快速攻克的先决条件，不是它"难不难"，而是它"<strong>对错好不好判定</strong>"。</div>
+
+<h3>规律四：成本坍缩是常量，能力以"同价加量"交付</h3>
+<p>固定能力的推理价格以约 <strong>40×/年</strong>（每 2 个月减半）坍缩，这不是竞争策略，而是算法效率（3×/年）× 硬件性价比（1.37×/年）× 架构创新 × 精度下降叠加的<strong>物理规律</strong>。</p>
+<p>对应的商业表达是：<strong>旗舰价格档位长期稳定，而同价位的能力持续加码</strong>。Anthropic 的 Opus 档从 4.5 到 4.8 到 Opus 5 一直是 $5/$25，但 Frontier-Bench 性能翻倍以上；GPT-5.6 Luna 发布 20 天后直接降价 80%。唯一的例外：GPT-5.5（2026-04）把旗舰价从 $2.50/$15 提到 $5/$30，是近年罕见的<strong>逆向定价</strong>。</p>
+
+<h3>规律五：瓶颈持续上移，抽象层随之上移</h3>
+<div class="tree">瓶颈在模型听不懂     → 人做 Prompt Engineering
+瓶颈在模型不知现场   → 人做 Context Engineering
+瓶颈在单次跑不对     → 人做 Harness Engineering
+瓶颈在每次要人启动   → 人做 Loop Engineering
+瓶颈在【下一个】     → ?</div>
+<p>关键实证：swebench.com 统一 harness 下同一模型的分数比厂商自报低约 5 个百分点；GAIA 上带脚手架 74.6% vs 裸模型 44.8%（<strong>同题 30 分的脚手架差</strong>）。<strong>在 2026 年，"用什么模型"对结果的影响，已经小于"用什么 harness"</strong>。</p>
+
+<div class="note"><strong>补充规律（半条）：开放与闭源的差距稳定在 3–6 个月，但供给的地理重心已经迁移。</strong>Epoch 测得开放权重模型落后前沿闭源 <strong>4 个月 / 8 个 ECI 点</strong>（2026-05），较 2025-10 的 3 个月略有扩大。但结构变了：Meta 在 2026-04 退出前沿开源，而 DeepSeek / Kimi / GLM / Qwen / MiniMax / 蚂蚁成为全球开放权重的主要供给方；2026-07-24 微软、英伟达、Hugging Face 等美国企业联合声明支持开放权重。</div>
+
+<h2>6 · 趋势推演：2026 H2 – 2029</h2>
+
+<div class="note">全部为 🔮 <strong>本文推测</strong>，但每条都给出<strong>可证伪指标</strong>。置信度为作者主观判断。</div>
+
+<h3>高置信度（&gt;70%）</h3>
+<p><strong>T1. 竞争主战场从模型层彻底转移到 harness/loop 层，模型 API 加速商品化。</strong>依据：规律五 + swebench 脚手架差 + Codex/Claude Code/Antigravity 的产品收敛。🔎 可证伪指标：到 2027 年底，主流前沿厂商的发布页中"agent 产品/harness 特性"篇幅超过"模型基准分数"。</p>
+<p><strong>T2. 推理成本继续以 10–40×/年坍缩，1M 上下文成为中端标配。</strong>🔎 可证伪指标：到 2027 年中，$1/百万输入 token 以下的模型可达 2026 年旗舰的智能水平。</p>
+<p><strong>T3. 评测体系再次整体换代：长时程真实工作评测取代静态基准。</strong>🔎 可证伪指标：到 2027 年，GDPval 类"真实经济任务"评测成为前沿发布的第一顺位指标；ARC-AGI-3 在 2027 年底前被攻破至 &gt;60%。</p>
+<p><strong>T4. AI 治理直接嵌入发布流程成为常态，"能力分级发放"制度化。</strong>🔎 可证伪指标：到 2027 年，至少两家前沿实验室的旗舰模型采用"按客户资质分级开放"的正式政策。</p>
+
+<h3>中置信度（40–70%）</h3>
+<p><strong>T5. 架构混合化定型：</strong>稀疏注意力 + 部分线性层 + 极致稀疏 MoE + 低精度，成为万亿级模型的默认配方。但纯线性/纯扩散短期内<strong>不会</strong>取代 Transformer。🔎 可证伪指标：到 2027 年底，全球前五的开放权重模型中至少四个采用混合注意力。</p>
+<p><strong>T6. 多 agent 从应用层编排下沉为模型侧的推理时基础设施。</strong>🔎 可证伪指标：到 2027 年，主流 API 普遍提供"任务级 token/时间预算 + 自动 agent 数量决策"参数。</p>
+<p><strong>T7. 记忆与自我改进成为 harness 层的下一个竞争焦点：agent 自动生成并维护自己的 skills 库。</strong>🔎 可证伪指标：到 2027 年中，主流 agent 产品默认具备"从失败轨迹自动沉淀 skill"的能力。</p>
+<p><strong>T8. "能力—采纳缺口"在 2027 年开始收窄，但收窄的原因是<strong>组织与流程改造</strong>，不是模型变强。</strong>🔎 可证伪指标：到 2028 年，同类调查中"有可衡量 P&amp;L 回报"的组织比例从 5% 升至 20% 以上。</p>
+
+<h3>低置信度 / 关键分歧点（&lt;40%，但影响巨大）</h3>
+<p><strong>T9. 电力将在 2027–2028 成为实际约束。</strong>投行判断 2027 年前后缺口显现；Epoch AI 判断 2028 年前不成为瓶颈。🔎 可证伪指标：2027 年底前，是否出现主流实验室因电力问题公开推迟训练计划。🔮 本文倾向：<strong>局部撞墙、整体可解</strong>。</p>
+<p><strong>T10. Anthropic 关于"强大 AI 出现在 2026 年底 – 2027 年初"的预测将被证伪。</strong>🔎 可证伪指标：到 2027-06，是否存在被广泛接受的"可替代大多数远程知识工作者"的系统。🔮 本文判断：<strong>证伪概率约 85%</strong>。</p>
+<p><strong>T11. RL 环境（environments）成为新的数据产业。</strong>🔎 可证伪指标：到 2027 年，出现以"环境/验证器"为核心产品的独立公司获得超 10 亿美元估值。</p>
+
+<blockquote>🔮 <strong>结构性判断：</strong>开放权重的竞争格局将在 2027 年重新洗牌，但方向不是"开源追上闭源"，而是"开源定义中间层"。理由：Epoch 数据显示差距稳定在 3–6 个月且未收窄；但当同等能力的成本每 2 个月减半时，"落后 4 个月"意味着"<strong>便宜约 4 倍且可自部署</strong>"。2026-07 Hugging Face 因美国前沿模型安全过滤无法用于取证分析、转而使用中国开放权重模型 GLM-5.2 完成工作的事件，是这一逻辑最生动的注脚。</blockquote>
+
+<h2 id="appendix-a">附录 A：三条脉络的一页速查</h2>
+<table>
+  <thead><tr><th>时期</th><th>模型</th><th>技术范式</th><th>产品形态</th></tr></thead>
+  <tbody>
+    <tr><td>2017–2020</td><td>Transformer → BERT/GPT-2 → GPT-3</td><td>Scaling Law、ICL、RAG</td><td>无（API 私测）</td></tr>
+    <tr><td>2020–2022</td><td>Gopher/Chinchilla/PaLM/OPT/BLOOM</td><td>CoT、RLHF、CAI、ReAct、FlashAttention</td><td>Copilot preview</td></tr>
+    <tr><td>2022–2024</td><td>ChatGPT/GPT-4/Claude/Llama/Mixtral/Gemini</td><td>Function Calling、DPO、ToT、GraphRAG、MLA</td><td>ChatGPT、GPTs、Artifacts、Devin、Computer Use</td></tr>
+    <tr><td>2024–2025</td><td>o1 → DeepSeek-V3/R1 → Claude 3.7 → Gemini 2.5 → GPT-5</td><td>Test-time Scaling、RLVR、GRPO、MCP、Context Engineering</td><td>Operator、Deep Research、Claude Code、Codex、CLI Agent</td></tr>
+    <tr><td>2025–2026</td><td>Opus 4.5–4.8 → Gemini 3/3.1 → GPT-5.2–5.5 → DeepSeek V4 → Ring-2.5-1T</td><td>Agent Skills、DSA 稀疏注意力、混合线性、Harness Engineering</td><td>Cursor 2.0 并行、Cowork、Codex 平台化、Antigravity</td></tr>
+    <tr><td>2026 至今</td><td>Fable 5/Mythos 5 → GPT-5.6 Sol/Terra/Luna → Kimi K3 2.8T → Opus 5</td><td>Loop Engineering、MCP 无状态化+Tasks、ultra 多智能体</td><td>Agent 指挥中心、Atlas 关停、能力分级发放</td></tr>
+  </tbody>
+</table>
+
+<h2 id="appendix-b">附录 B：存疑与冲突清单</h2>
+<table>
+  <thead><tr><th>#</th><th>事项</th><th>冲突情况</th><th>本文处理</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>2026 年 SWE-bench 高分（87.6%/88.6%/95.5%）</td><td>仅见 AI 生成聚合站，同站自相矛盾</td><td><strong>不采用</strong></td></tr>
+    <tr><td>2</td><td>METR 倍增周期"4 个月/89 天"</td><td>未在 METR 一手页找到，METR 自述为 6–7 个月</td><td>采用 6–7 个月</td></tr>
+    <tr><td>3</td><td>Harness Engineering 首创者</td><td>Hashimoto vs Matt Kropp 两说</td><td>写"多方几乎同时提出，OpenAI 官方文定型"</td></tr>
+    <tr><td>4</td><td>Loop Engineering 具体日期</td><td>Osmani 6-07 与 6-08 两说</td><td>写"2026 年 6 月上旬"</td></tr>
+    <tr><td>5</td><td>Structured Outputs 发布月</td><td>OpenAI 帮助中心"June 2024" vs 官方博客 2024-08-06</td><td>以官方博客为准</td></tr>
+    <tr><td>6</td><td>"Meta 于 2026-04-08 开源 Llama 5"</td><td>与 Meta 官方 Muse Spark 闭源叙事直接冲突</td><td><strong>判为错误信息，不采用</strong></td></tr>
+    <tr><td>7</td><td>Claude Fable 5 / Mythos 5 的访问状态</td><td>官方曾于 2026-06-12 暂停访问，后于 6-30 宣布 7-1 重新上线</td><td>记录发布事实，状态标注需复核</td></tr>
+    <tr><td>8</td><td>Microsoft Build 2026 的"Project Polaris"等</td><td>全部来自 AI 生成稿，原文自承微软官方未用该代号</td><td><strong>不写入正文</strong></td></tr>
+    <tr><td>9</td><td>各类 agent 落地失败率（95%/11%/5.2%/57.3%）</td><td>定义与样本口径完全不同</td><td>并列呈现并注明各自定义</td></tr>
+    <tr><td>10</td><td>Llama 4 上榜争议</td><td>LMArena 使用未公开实验版本</td><td>记录争议本身，不引用其分数</td></tr>
+    <tr><td>11</td><td>DeepSeek 557.6 万美元成本</td><td>中外媒体常误挂在 R1 头上</td><td>明确归属为 <strong>V3 预训练成本</strong></td></tr>
+    <tr><td>12</td><td>清华 ICLR 2026 无监督 RLVR 论文 arXiv 编号</td><td>编号存疑</td><td>保留结论，标注需复核</td></tr>
+  </tbody>
+</table>
+
+<h2 id="appendix-c">附录 C：核心一手来源</h2>
+<p><strong>论文</strong>：<a href="https://arxiv.org/abs/1706.03762">Transformer</a>・<a href="https://arxiv.org/abs/2005.14165">GPT-3/ICL</a>・<a href="https://arxiv.org/abs/2201.11903">CoT</a>・<a href="https://arxiv.org/abs/2203.02155">InstructGPT/RLHF</a>・<a href="https://arxiv.org/abs/2203.15556">Chinchilla</a>・<a href="https://arxiv.org/abs/2005.11401">RAG</a>・<a href="https://arxiv.org/abs/2210.03629">ReAct</a>・<a href="https://arxiv.org/abs/2305.18290">DPO</a>・<a href="https://arxiv.org/abs/2408.03314">Test-time Scaling</a>・<a href="https://arxiv.org/abs/2411.15124">RLVR/Tülu 3</a>・<a href="https://arxiv.org/abs/2402.03300">GRPO</a>・<a href="https://arxiv.org/abs/2501.12948">DeepSeek-R1</a>・<a href="https://arxiv.org/abs/2512.02556">DeepSeek-V3.2</a></p>
+<p><strong>厂商官方</strong>：<a href="https://openai.com/news/">OpenAI News</a>・<a href="https://www.anthropic.com/news">Anthropic News</a>・<a href="https://www.anthropic.com/engineering">Anthropic Engineering</a>・<a href="https://blog.google/technology/ai/">Google AI Blog</a>・<a href="https://blog.modelcontextprotocol.io/">MCP Blog</a>・<a href="https://www.kimi.com/blog/kimi-k3">Kimi Blog</a></p>
+<p><strong>独立评测与研究机构</strong>：<a href="https://epoch.ai/">Epoch AI</a>・<a href="https://metr.org/">METR</a>・<a href="https://arcprize.org/leaderboard">ARC Prize Leaderboard</a>・<a href="https://www.swebench.com/">SWE-bench</a>・<a href="https://hai.stanford.edu/">Stanford HAI AI Index</a></p>
+
+<p style="margin-top:40px;color:#9a9a9a;font-size:13px;">本文由联网检索 + 交叉核验生成于 2026-08-03。技术演进速度极快，建议使用者对 2026 年内的条目在引用前做一次一手来源复核。</p>
+
+</body>
+</html>
