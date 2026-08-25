@@ -1,5 +1,5 @@
 - title: "nano-multiagent"
-  summary: "A lightweight multi-agent framework with a built-in Web IM interface and Gateway, enabling personal AI assistant workflows orchestrated via modular Python agents."
+  summary: "A self-hosted personal agent system for running multiple persistent agents across your own machines, combining a reusable agent kernel, Web IM, and a node Gateway with long-running tasks, subagent workflows, permissions, and Feishu delivery."
   url: "https://github.com/Mrchen116/nano-multiagent"
   tags:
     - "Multi-Agent"
@@ -8,7 +8,7 @@
     - "Open Source"
 
 - title: "LLM Bridge"
-  summary: "An open-source project around connecting and orchestrating large language model workflows."
+  summary: "An LLM gateway for agent workloads that unifies model providers and Codex OAuth accounts behind Anthropic Messages, OpenAI Chat Completions, and Responses APIs, with protocol translation, failover, streaming, and visual multi-agent trace inspection."
   url: "https://github.com/Mrchen116/LLM_Bridge"
   tags:
     - "LLM"
@@ -16,7 +16,7 @@
     - "Engineering"
 
 - title: "AudioInput"
-  summary: "A practical project focused on audio input workflows and tooling."
+  summary: "A macOS menu-bar dictation tool: hold a configurable Command key to record, release to transcribe with Volcengine ASR, and automatically paste the result into the active application."
   url: "https://github.com/Mrchen116/AudioInput"
   tags:
     - "Audio"
