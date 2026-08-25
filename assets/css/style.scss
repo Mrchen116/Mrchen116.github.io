@@ -100,7 +100,13 @@ nav.top .links a:hover { color: var(--accent); }
   margin: 0 0 14px;
   line-height: 1.7;
 }
-.bio em { color: var(--muted); font-style: italic; }
+.bio.role { font-weight: 500; margin-bottom: 8px; }
+.education {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 22px 0 0;
+}
 
 // ---------- section ----------
 section { margin-top: 64px; }

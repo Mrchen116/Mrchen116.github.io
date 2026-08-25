@@ -5,8 +5,9 @@ title: About
 <header>
   <h1 class="name">Chen, Zijian</h1>
   <p class="tagline">Trying my best to deliver every job a human can do — to agents.</p>
-  <p class="bio">Agent Engineer. <em>MS in Artificial Intelligence, Beijing University of Posts and Telecommunications (2022–2025). BS in Software Engineering, Shenzhen University (2018–2022).</em></p>
-  <p class="bio">Working on multi-modal LLMs, agent orchestration, and the boring infrastructure that makes them reliable. This site is where I keep notes I would rather not lose.</p>
+  <p class="bio role">Agent Engineer.</p>
+  <p class="bio">I work on building, evaluating, and improving agent systems. I am particularly interested in how people and agents work together, and how agents can independently carry out substantial, long-running work. My current focus includes multi-agent systems, agent memory, and recursive self-improvement (RSI).</p>
+  <p class="education">M.S. in Artificial Intelligence · BUPT (2022–2025)<br>B.S. in Software Engineering · SZU (2018–2022)</p>
 </header>
 
 {% assign writings = site.posts | concat: site.articles | sort: "date" | reverse %}
