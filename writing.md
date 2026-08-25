@@ -4,8 +4,7 @@ permalink: /writing/
 ---
 
 <div class="crumb">Writing</div>
-<h1 class="post-title">Notes &amp; deep articles</h1>
-<p class="tagline" style="margin-bottom:48px;">Short Markdown notes and longer HTML pieces, in chronological order.</p>
+<h1 class="post-title" style="margin-bottom:48px;">Notes</h1>
 
 {% assign writings = site.posts | concat: site.articles | sort: "date" | reverse %}
 

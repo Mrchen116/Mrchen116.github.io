@@ -4,8 +4,7 @@ permalink: /projects/
 ---
 
 <div class="crumb">Projects</div>
-<h1 class="post-title">Open-source work</h1>
-<p class="tagline" style="margin-bottom:48px;">A concise list of current projects, with links to the source repositories.</p>
+<h1 class="post-title" style="margin-bottom:48px;">Open-source work</h1>
 
 {% for project in site.data.projects %}
   <div class="proj">
