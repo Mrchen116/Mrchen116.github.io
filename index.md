@@ -4,7 +4,6 @@ title: About
 
 <header>
   <h1 class="name">Chen, Zijian</h1>
-  <p class="tagline">Trying my best to deliver every job a human can do — to agents.</p>
   <p class="bio role">Agent Engineer.</p>
   <p class="bio">I work on building, evaluating, and improving agent systems. I am particularly interested in how people and agents work together, and how agents can independently carry out substantial, long-running work. My current focus includes multi-agent systems, agent memory, and recursive self-improvement (RSI).</p>
   <p class="education">M.S. in Artificial Intelligence · BUPT (2022–2025)<br>B.S. in Software Engineering · SZU (2018–2022)</p>
