@@ -278,6 +278,35 @@ section > h2 {
   font-style: italic;
   color: var(--muted);
 }
+.prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.prose table {
+  display: block;
+  width: 100%;
+  margin: 24px 0;
+  border-collapse: collapse;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.prose th,
+.prose td {
+  min-width: 120px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+.prose th {
+  background: var(--soft);
+  font-weight: 600;
+}
 
 .post-foot {
   margin-top: 80px;
