@@ -101,6 +101,7 @@ Last Messages
 Existing Memories
 → 查重
 → 判断与哪些历史 Memory 有关联
+→ 只作为提取上下文，不自动修改旧记录
 ```
 
 ---
@@ -238,7 +239,7 @@ context-rich
 适合未来 retrieval
 ```
 
-当前自动 extraction 偏历史追加：
+**当前 V3 的 `add()` 自动提取是 ADD-only：新增 Memory Record，不会自动修改或删除旧 Memory。** 这是[官方文档](https://github.com/mem0ai/mem0/blob/main/docs/core-concepts/how-it-works.mdx)明确的行为。例如：
 
 ```text
 M1:
@@ -251,7 +252,9 @@ M3:
 User switched from Redis to PostgreSQL.
 ```
 
-因此可以保留决策和状态的变化过程。
+新增 M3 后，M1、M2 仍然保留，因此能保留决策和状态的变化过程。**如果需要纠错或删除，由应用 / Harness 显式调用 `mem0.update(memory_id, "新的内容")` 或 `mem0.delete(memory_id)`。**
+
+从工程上看，这样能降低模型误改旧事实的风险：用户说“这个项目想试试 Rust”，并不意味着原来的“用户喜欢 Python”已经失效。自动覆盖或删除可能把局部选择误判成整体偏好变化；追加记录保留了两者的上下文，但后续使用时仍需判断哪条适用于当前问题。
 
 ---
 
@@ -453,6 +456,7 @@ Markdown / SQLite / append-only event log
 Harness
 │
 ├── 什么时候 add()
+├── 什么时候显式 update() / delete()
 ├── 什么时候 search()
 ├── search 用什么 query
 └── Memory 怎么放入 Agent Context
