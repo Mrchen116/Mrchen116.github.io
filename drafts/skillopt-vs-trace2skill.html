@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SkillOpt vs Trace2Skill：从轨迹到 skill 变更，两种做法画给你看</title>
+  <style>
+    :root {
+      --a-ink:#1a1a1a; --a-muted:#6b6b6b; --a-faint:#9a9a9a; --a-rule:#e6e3dc;
+      --a-paper:#ffffff; --a-soft:#f5f1ea; --a-accent:#8b3a2f; --a-accent-soft:#f5ebe6;
+      --a-plum:#7a3a5c; --a-plum-soft:#f1e6ec; --a-plum-stroke:#b88aa0;
+      --a-forest:#4a6f3a; --a-forest-soft:#ecf0e6; --a-forest-stroke:#a8c0a0;
+      --a-ochre:#a07020; --a-ochre-soft:#f5ecdb; --a-ochre-stroke:#d4a86a;
+      --a-teal:#2a6470; --a-teal-soft:#e6eef0; --a-teal-stroke:#9ab8be;
+      --a-code-bg:#f5f1ea; --a-code-ink:#5a2a22; --a-pre-bg:#1a1a1a; --a-pre-ink:#e4e0d4;
+    }
+    body { max-width:760px; margin:0 auto; padding:48px 24px 80px; background:var(--a-paper);
+      color:var(--a-ink); font-family:"Newsreader",Georgia,"Songti SC","Noto Serif SC",serif;
+      font-size:17px; line-height:1.72; }
+    .eyebrow { font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:0.18em;
+      text-transform:uppercase; color:var(--a-accent); font-weight:500; }
+    h1 { font-size:34px; line-height:1.15; font-weight:500; margin:12px 0 16px; }
+    h2 { font-size:26px; margin:52px 0 14px; font-weight:500; }
+    h3 { font-size:18px; margin:32px 0 10px; font-weight:600; }
+    .lead { font-size:19px; color:var(--a-muted); font-style:italic; margin:0 0 24px; }
+    code { font-family:"JetBrains Mono",monospace; background:var(--a-code-bg); color:var(--a-code-ink);
+      padding:1px 6px; border-radius:3px; font-size:0.88em; }
+    table { width:100%; border-collapse:collapse; margin:18px 0; border:1px solid var(--a-rule);
+      border-radius:4px; font-size:14.5px; font-family:-apple-system,"Helvetica Neue","PingFang SC",sans-serif; }
+    th { background:var(--a-ink); color:#fff; text-align:left; padding:10px 14px;
+      font-family:"JetBrains Mono",monospace; font-size:11.5px; text-transform:uppercase;
+      letter-spacing:0.06em; font-weight:500; }
+    td { padding:11px 14px; border-bottom:1px solid var(--a-rule); vertical-align:top; }
+    tr:last-child td { border-bottom:0; }
+    blockquote { border-left:3px solid var(--a-accent); padding-left:18px; color:var(--a-muted);
+      font-style:italic; margin:22px 0; }
+    .note { border-left:4px solid var(--a-teal); background:var(--a-teal-soft); padding:14px 18px;
+      margin:18px 0; border-radius:0 4px 4px 0; font-size:15px; }
+    .note.warn { border-left-color:var(--a-ochre); background:var(--a-ochre-soft); }
+    .note.green { border-left-color:var(--a-forest); background:var(--a-forest-soft); }
+    .callout { background:var(--a-paper); border:1px solid var(--a-rule); border-radius:4px;
+      padding:16px 20px; margin:18px 0; }
+    .diagram { background:var(--a-paper); border:1px solid var(--a-rule); border-radius:4px;
+      padding:22px; margin:24px 0; overflow:auto; }
+    .diagram-title { font-family:"JetBrains Mono",monospace; font-size:12px; letter-spacing:0.06em;
+      text-transform:uppercase; color:var(--a-accent); margin-bottom:12px; }
+    .diagram svg { width:100%; height:auto; display:block; }
+    .figure-caption { color:var(--a-muted); font-size:13.5px; margin-top:12px; font-style:italic; }
+  </style>
+</head>
+<body>
+
+<div class="eyebrow">Skill 自进化 · 参考工作对比</div>
+<h1>SkillOpt vs Trace2Skill：从轨迹到 skill 变更，两种做法画给你看</h1>
+<p class="lead">两个工作都在做同一件事——读一批执行轨迹，把"教训"沉淀成更好的 agent skill。但具体怎么走，分歧不小。本文用三张流程图把两者讲清楚，再并排标出区别。</p>
+
+<h2>1 · 它们共享的骨架</h2>
+<p>抛开细节，两者都是同一条主干：<strong>带着 skill 去干活 → 得到轨迹 → 分析轨迹找"该改什么" → 把改动合并 → 写回 skill → 验证好不好</strong>。区别藏在每一站具体怎么做，尤其是<strong>分析</strong>、<strong>合并</strong>、<strong>skill 的形态</strong>和<strong>验证</strong>这四站。先各看一张完整流程图，再并排对比。</p>
+
+<div class="note"><strong>一句话先记住：</strong>SkillOpt 把一份 <em>单个</em> <code>SKILL.md</code> 当"参数"来训；Trace2Skill 进化的是一个 <em>skill 目录</em>（含 references 多文件），还会真去环境里复现失败来验证根因。</div>
+
+<h2>2 · SkillOpt 的流程</h2>
+<p>把 skill 当神经网络参数来"训"：跑一批带标准答案的题，按对错把轨迹分两桶，各自找共性、提出有限的几条改动，合并打分排序，写进 skill，最后在留出集上验收——只有分数严格变高才接受。</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 1 · SkillOpt：单文件 skill 的"训练循环"</div>
+  <svg viewBox="0 0 720 660" role="img" font-family="-apple-system,'PingFang SC',sans-serif">
+    <defs>
+      <marker id="ar" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b3a2f"/></marker>
+      <marker id="aro" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a07020"/></marker>
+    </defs>
+
+    <!-- input -->
+    <rect x="170" y="14" width="380" height="46" rx="6" fill="#f5f1ea" stroke="#e6e3dc"/>
+    <text x="360" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">输入</text>
+    <text x="360" y="50" text-anchor="middle" font-size="12" fill="#6b6b6b">当前 skill ＋ 一批任务（每题带标准答案）</text>
+    <line x1="360" y1="60" x2="360" y2="80" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <!-- rollout -->
+    <rect x="170" y="80" width="380" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">① ROLLOUT 跑</text>
+    <text x="360" y="120" text-anchor="middle" font-size="12" fill="#1a1a1a">带 skill 把这批题跑一遍 → 每题得：轨迹 ＋ 对错分(hard)</text>
+    <line x1="360" y1="132" x2="360" y2="150" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <!-- reflect header -->
+    <rect x="60" y="150" width="600" height="32" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="170" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">② REFLECT 反思：按对错分两桶，各切小批(minibatch=8)，各跑分析师找共性</text>
+
+    <!-- split arrows -->
+    <line x1="240" y1="182" x2="180" y2="200" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="480" y1="182" x2="540" y2="200" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#ar)"/>
+
+    <!-- failure bucket -->
+    <rect x="20" y="200" width="320" height="86" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="180" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#a07020">失败桶（做错的）</text>
+    <text x="180" y="240" text-anchor="middle" font-size="12" fill="#1a1a1a">分析师 analyst_error</text>
+    <text x="180" y="258" text-anchor="middle" font-size="12" fill="#1a1a1a">找"共性失败" → 提"填空缺"的改动</text>
+    <text x="180" y="277" text-anchor="middle" font-size="11.5" fill="#6b6b6b">每个小批产 1 个改动包(≤L 条)</text>
+
+    <!-- success bucket -->
+    <rect x="380" y="200" width="320" height="86" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="540" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6f3a">成功桶（做对的）</text>
+    <text x="540" y="240" text-anchor="middle" font-size="12" fill="#1a1a1a">分析师 analyst_success</text>
+    <text x="540" y="258" text-anchor="middle" font-size="12" fill="#1a1a1a">找"共性赢法" → 提"强化"的改动</text>
+    <text x="540" y="277" text-anchor="middle" font-size="11.5" fill="#6b6b6b">每个小批产 1 个改动包(≤L 条)</text>
+
+    <!-- merge arrows -->
+    <line x1="180" y1="286" x2="320" y2="304" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="540" y1="286" x2="400" y2="304" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#ar)"/>
+
+    <!-- aggregate -->
+    <rect x="170" y="304" width="380" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="324" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">③ AGGREGATE 合并</text>
+    <text x="360" y="344" text-anchor="middle" font-size="12" fill="#1a1a1a">去重合并(失败优先) → 每条改动打『支持数』(被几条轨迹支持)</text>
+    <line x1="360" y1="356" x2="360" y2="374" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <!-- ranking -->
+    <rect x="170" y="374" width="380" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="394" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">④ RANKING 选</text>
+    <text x="360" y="414" text-anchor="middle" font-size="12" fill="#1a1a1a">按系统性影响排序，取前 L 条(支持数高者优先)；其余丢</text>
+    <line x1="360" y1="426" x2="360" y2="444" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <!-- update -->
+    <rect x="170" y="444" width="380" height="46" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="464" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">⑤ UPDATE 应用</text>
+    <text x="360" y="482" text-anchor="middle" font-size="12" fill="#1a1a1a">把选中改动写进 skill → 候选 skill</text>
+    <line x1="360" y1="490" x2="360" y2="508" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <!-- gate -->
+    <rect x="170" y="508" width="380" height="58" rx="6" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="360" y="528" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">⑥ GATE 验收（离线闸门）</text>
+    <text x="360" y="547" text-anchor="middle" font-size="12" fill="#1a1a1a">在【留出集】打分：比当前严格更高 → 接受</text>
+    <text x="360" y="562" text-anchor="middle" font-size="12" fill="#1a1a1a">否则 → 拒绝、撤销改动</text>
+    <line x1="360" y1="566" x2="360" y2="586" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <!-- product -->
+    <rect x="170" y="586" width="380" height="44" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="360" y="613" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6f3a">产物：best_skill.md（全程留出集分最高那版）</text>
+
+    <!-- reject feedback loop -->
+    <path d="M550,537 L688,537 L688,166 L662,166" fill="none" stroke="#a07020" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#aro)"/>
+    <text x="694" y="360" font-size="11" fill="#a07020" transform="rotate(90 694,360)" text-anchor="middle">拒绝的改动 → 缓冲，下轮当反面教材</text>
+  </svg>
+  <p class="figure-caption">图例：<span style="background:#f5ebe6;padding:1px 8px;border-radius:3px;">主流程步骤</span> <span style="background:#f5ecdb;padding:1px 8px;border-radius:3px;">失败侧</span> <span style="background:#ecf0e6;padding:1px 8px;border-radius:3px;">成功侧 / 产物</span> <span style="background:#e6eef0;padding:1px 8px;border-radius:3px;">验证闸门</span>。橙色虚线 = 被拒改动回流当负反馈。</p>
+</div>
+
+<h2>3 · Trace2Skill 的流程</h2>
+<p>它不止改单文件，而是进化一个 <strong>skill 目录</strong>。最大不同在分析：失败轨迹交给一个会动手的 agent——它<strong>真去复现失败、打个最小补丁、重新对标准答案测一遍</strong>，修对了才确认根因。之后把各任务的"教训"并行提成补丁，再无冲突地合并进目录。</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 2 · Trace2Skill：skill 目录的 map-reduce 进化</div>
+  <svg viewBox="0 0 720 720" role="img" font-family="-apple-system,'PingFang SC',sans-serif">
+    <defs>
+      <marker id="br" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b3a2f"/></marker>
+    </defs>
+
+    <!-- input -->
+    <rect x="150" y="14" width="420" height="46" rx="6" fill="#f5f1ea" stroke="#e6e3dc"/>
+    <text x="360" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">跑 benchmark ＋ 评测</text>
+    <text x="360" y="50" text-anchor="middle" font-size="12" fill="#6b6b6b">→ 把每题分成 失败题 / 成功题</text>
+    <line x1="260" y1="60" x2="200" y2="78" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#br)"/>
+    <line x1="460" y1="60" x2="520" y2="78" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#br)"/>
+
+    <!-- failure analysis (agentic) -->
+    <rect x="20" y="78" width="320" height="110" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="180" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#a07020">失败题 → agentic 分析 ★</text>
+    <text x="180" y="118" text-anchor="middle" font-size="12" fill="#1a1a1a">一个会动手的 agent：</text>
+    <text x="180" y="135" text-anchor="middle" font-size="12" fill="#1a1a1a">复现失败 → 打最小补丁 →</text>
+    <text x="180" y="152" text-anchor="middle" font-size="12" fill="#1a1a1a">重测对标准答案，修对才确认根因</text>
+    <text x="180" y="172" text-anchor="middle" font-size="11.5" fill="#6b6b6b">失败记录 = {原因 ＋ ≤3 失败教训}</text>
+
+    <!-- success analysis -->
+    <rect x="380" y="78" width="320" height="110" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="540" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6f3a">成功题 → 单遍分析</text>
+    <text x="540" y="120" text-anchor="middle" font-size="12" fill="#1a1a1a">不需要动手，读一遍即可：</text>
+    <text x="540" y="138" text-anchor="middle" font-size="12" fill="#1a1a1a">蒸馏『精简赢法』，剥掉死路返工</text>
+    <text x="540" y="172" text-anchor="middle" font-size="11.5" fill="#6b6b6b">成功记录 = {精简赢法 ＋ ≤3 成功教训}</text>
+
+    <line x1="180" y1="188" x2="300" y2="206" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#br)"/>
+    <line x1="540" y1="188" x2="420" y2="206" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#br)"/>
+
+    <!-- pool / mode -->
+    <rect x="90" y="206" width="540" height="58" rx="6" fill="#f5f1ea" stroke="#e6e3dc"/>
+    <text x="360" y="226" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">两个记录池 · 选入口</text>
+    <text x="360" y="246" text-anchor="middle" font-size="12" fill="#1a1a1a">error-driven＝只用失败 ｜ combined＝失败＋成功混一池（失败优先）</text>
+    <text x="360" y="260" text-anchor="middle" font-size="11" fill="#6b6b6b">成功侧只在 combined 入口参与</text>
+    <line x1="360" y1="264" x2="360" y2="282" stroke="#8b3a2f" stroke-width="2" marker-end="url(#br)"/>
+
+    <!-- MAP -->
+    <rect x="150" y="282" width="420" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="302" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">① MAP 提补丁（并行）</text>
+    <text x="360" y="322" text-anchor="middle" font-size="12" fill="#1a1a1a">记录按任务切批，每批对【原 skill 冻结快照】各提一个补丁</text>
+    <line x1="360" y1="334" x2="360" y2="352" stroke="#8b3a2f" stroke-width="2" marker-end="url(#br)"/>
+
+    <!-- REDUCE -->
+    <rect x="150" y="352" width="420" height="64" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="372" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">② REDUCE 无冲突合并</text>
+    <text x="360" y="391" text-anchor="middle" font-size="12" fill="#1a1a1a">去重 / 解冲突 / ★多条改动行级独立(可并行写)★</text>
+    <text x="360" y="408" text-anchor="middle" font-size="12" fill="#1a1a1a">新建文件与其链接成对保留；失败的改动优先</text>
+    <line x1="360" y1="416" x2="360" y2="434" stroke="#8b3a2f" stroke-width="2" marker-end="url(#br)"/>
+
+    <!-- TRANSLATE -->
+    <rect x="150" y="434" width="420" height="46" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="454" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">③ TRANSLATE 翻成内容</text>
+    <text x="360" y="472" text-anchor="middle" font-size="12" fill="#1a1a1a">把每条"指令式改动"翻成确切要写入的 markdown</text>
+    <line x1="360" y1="480" x2="360" y2="498" stroke="#8b3a2f" stroke-width="2" marker-end="url(#br)"/>
+
+    <!-- APPLY -->
+    <rect x="150" y="498" width="420" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="360" y="518" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">④ APPLY 写盘（程序化）</text>
+    <text x="360" y="538" text-anchor="middle" font-size="12" fill="#1a1a1a">改 skill【目录】各文件：改 / 新建 references/*.md / 删文件</text>
+    <line x1="360" y1="550" x2="360" y2="568" stroke="#8b3a2f" stroke-width="2" marker-end="url(#br)"/>
+
+    <!-- VERIFY -->
+    <rect x="150" y="568" width="420" height="56" rx="6" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="360" y="588" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">⑤ VERIFY ＋ 全目录复查清单</text>
+    <text x="360" y="608" text-anchor="middle" font-size="12" fill="#1a1a1a">链接不断 / SKILL.md 不超行数 / 要点与细节分层</text>
+    <line x1="360" y1="624" x2="360" y2="642" stroke="#8b3a2f" stroke-width="2" marker-end="url(#br)"/>
+
+    <!-- product -->
+    <rect x="150" y="642" width="420" height="44" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="360" y="669" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6f3a">产物：进化后的 skill 目录</text>
+  </svg>
+  <p class="figure-caption">图例：<span style="background:#f5ebe6;padding:1px 8px;border-radius:3px;">进化步骤</span> <span style="background:#f5ecdb;padding:1px 8px;border-radius:3px;">失败侧（★ agentic 验证驱动）</span> <span style="background:#ecf0e6;padding:1px 8px;border-radius:3px;">成功侧 / 产物</span> <span style="background:#e6eef0;padding:1px 8px;border-radius:3px;">复查</span>。注：进化阶段本身<strong>没有性能 gate</strong>（只格式校验+回滚），图中失败侧★就是它唯一依赖标准答案的环节。</p>
+</div>
+
+<h2>4 · 并排看区别</h2>
+<p>把两者对齐到同一条骨架的五站上，分歧一眼可见。</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 3 · 同一骨架五站，两者在哪不一样</div>
+  <svg viewBox="0 0 980 300" role="img" font-family="-apple-system,'PingFang SC',sans-serif">
+    <defs>
+      <marker id="cr" markerWidth="9" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#6b6b6b"/></marker>
+    </defs>
+
+    <!-- SkillOpt row (teal, top) -->
+    <rect x="16"  y="40" width="168" height="74" rx="5" fill="#e6eef0" stroke="#9ab8be"/>
+    <rect x="214" y="40" width="168" height="74" rx="5" fill="#e6eef0" stroke="#9ab8be"/>
+    <rect x="412" y="40" width="168" height="74" rx="5" fill="#e6eef0" stroke="#9ab8be"/>
+    <rect x="610" y="40" width="168" height="74" rx="5" fill="#e6eef0" stroke="#9ab8be"/>
+    <rect x="808" y="40" width="156" height="74" rx="5" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="100" y="60" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2a6470">SkillOpt</text>
+    <text x="100" y="80" text-anchor="middle" font-size="11" fill="#1a1a1a">数据集任务现跑</text>
+    <text x="100" y="96" text-anchor="middle" font-size="11" fill="#1a1a1a">（带标准答案）</text>
+    <text x="298" y="60" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2a6470">SkillOpt</text>
+    <text x="298" y="78" text-anchor="middle" font-size="11" fill="#1a1a1a">成败分桶＋小批</text>
+    <text x="298" y="94" text-anchor="middle" font-size="11" fill="#1a1a1a">显式『支持数』</text>
+    <text x="496" y="60" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2a6470">SkillOpt</text>
+    <text x="496" y="78" text-anchor="middle" font-size="11" fill="#1a1a1a">层级合并 → 排序</text>
+    <text x="496" y="94" text-anchor="middle" font-size="11" fill="#1a1a1a">截断(预算 L)</text>
+    <text x="694" y="60" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2a6470">SkillOpt</text>
+    <text x="694" y="86" text-anchor="middle" font-size="11" fill="#1a1a1a">单个 SKILL.md</text>
+    <text x="886" y="60" text-anchor="middle" font-size="11.5" font-weight="700" fill="#2a6470">SkillOpt</text>
+    <text x="886" y="78" text-anchor="middle" font-size="11" fill="#1a1a1a">留出集闸门</text>
+    <text x="886" y="94" text-anchor="middle" font-size="11" fill="#1a1a1a">(严格更高才收)</text>
+
+    <!-- spine (mid, neutral) -->
+    <rect x="16"  y="126" width="168" height="48" rx="5" fill="#f5f1ea" stroke="#6b6b6b"/>
+    <rect x="214" y="126" width="168" height="48" rx="5" fill="#f5f1ea" stroke="#6b6b6b"/>
+    <rect x="412" y="126" width="168" height="48" rx="5" fill="#f5f1ea" stroke="#6b6b6b"/>
+    <rect x="610" y="126" width="168" height="48" rx="5" fill="#f5f1ea" stroke="#6b6b6b"/>
+    <rect x="808" y="126" width="156" height="48" rx="5" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="100" y="155" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a1a1a">① 轨迹来源</text>
+    <text x="298" y="155" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a1a1a">② 分析"改什么"</text>
+    <text x="496" y="155" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a1a1a">③ 合并改动</text>
+    <text x="694" y="155" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a1a1a">④ 写进 skill</text>
+    <text x="886" y="149" text-anchor="middle" font-size="12.5" font-weight="700" fill="#a07020">⑤ 验证</text>
+    <text x="886" y="166" text-anchor="middle" font-size="10.5" fill="#a07020">（都离线）</text>
+
+    <!-- arrows between spine -->
+    <line x1="184" y1="150" x2="214" y2="150" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#cr)"/>
+    <line x1="382" y1="150" x2="412" y2="150" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#cr)"/>
+    <line x1="580" y1="150" x2="610" y2="150" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#cr)"/>
+    <line x1="778" y1="150" x2="808" y2="150" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#cr)"/>
+
+    <!-- Trace2Skill row (plum, bottom) -->
+    <rect x="16"  y="186" width="168" height="84" rx="5" fill="#f1e6ec" stroke="#b88aa0"/>
+    <rect x="214" y="186" width="168" height="84" rx="5" fill="#f1e6ec" stroke="#b88aa0"/>
+    <rect x="412" y="186" width="168" height="84" rx="5" fill="#f1e6ec" stroke="#b88aa0"/>
+    <rect x="610" y="186" width="168" height="84" rx="5" fill="#f1e6ec" stroke="#b88aa0"/>
+    <rect x="808" y="186" width="156" height="84" rx="5" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="100" y="206" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7a3a5c">Trace2Skill</text>
+    <text x="100" y="226" text-anchor="middle" font-size="11" fill="#1a1a1a">跑 bench＋评测</text>
+    <text x="100" y="242" text-anchor="middle" font-size="11" fill="#1a1a1a">定成败</text>
+    <text x="298" y="206" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7a3a5c">Trace2Skill</text>
+    <text x="298" y="224" text-anchor="middle" font-size="11" fill="#1a1a1a">失败=agentic 验证</text>
+    <text x="298" y="240" text-anchor="middle" font-size="11" fill="#1a1a1a">成功=单遍；产教训</text>
+    <text x="298" y="256" text-anchor="middle" font-size="11" fill="#1a1a1a">条目</text>
+    <text x="496" y="206" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7a3a5c">Trace2Skill</text>
+    <text x="496" y="224" text-anchor="middle" font-size="11" fill="#1a1a1a">无冲突合并</text>
+    <text x="496" y="240" text-anchor="middle" font-size="11" fill="#1a1a1a">(行级独立)＋</text>
+    <text x="496" y="256" text-anchor="middle" font-size="11" fill="#1a1a1a">目录完整性</text>
+    <text x="694" y="206" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7a3a5c">Trace2Skill</text>
+    <text x="694" y="228" text-anchor="middle" font-size="11" fill="#1a1a1a">多文件 skill 目录</text>
+    <text x="694" y="244" text-anchor="middle" font-size="11" fill="#1a1a1a">(可新建/删文件)</text>
+    <text x="886" y="206" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7a3a5c">Trace2Skill</text>
+    <text x="886" y="228" text-anchor="middle" font-size="11" fill="#1a1a1a">无环内性能 gate</text>
+    <text x="886" y="244" text-anchor="middle" font-size="11" fill="#1a1a1a">(改完只查格式+回滚)</text>
+  </svg>
+  <p class="figure-caption">图例：<span style="background:#e6eef0;padding:1px 8px;border-radius:3px;">SkillOpt</span> <span style="background:#f1e6ec;padding:1px 8px;border-radius:3px;">Trace2Skill</span> <span style="background:#f5f1ea;padding:1px 8px;border-radius:3px;">共享骨架</span> <span style="background:#f5ecdb;padding:1px 8px;border-radius:3px;">gold 依赖（SkillOpt 在环内 gate；Trace2Skill 在「分析时根因验证」，它没有环内 gate）→ 在线都失效</span>。</p>
+</div>
+
+<table>
+  <thead><tr><th>站</th><th>SkillOpt</th><th>Trace2Skill</th></tr></thead>
+  <tbody>
+    <tr><td>skill 形态</td><td>单个 <code>SKILL.md</code></td><td><strong>目录</strong>（SKILL.md ＋ references/）</td></tr>
+    <tr><td>分析失败</td><td>单次读轨迹找共性</td><td><strong>agentic：复现＋打补丁＋重测标准答案</strong>验证根因</td></tr>
+    <tr><td>分析成功</td><td>单次读轨迹找赢法</td><td>单遍蒸馏"精简赢法"（论文：成功侧增益最不稳）</td></tr>
+    <tr><td>合并</td><td>层级合并＋显式『支持数』排序截断</td><td>无冲突合并（行级独立）＋ 新建文件/链接成对 ＋ 目录健康复查</td></tr>
+    <tr><td>控规模</td><td>改动预算 L（学习率）＋ 保护区</td><td>行数上限 ＋ 进阶披露 ＋ 复查清单</td></tr>
+    <tr><td>验证</td><td><strong>有环内 gate</strong>：selection split 专门 accept/reject 每处 edit（严格更高才收）</td><td><strong>无环内性能 gate</strong>：edit 只过格式校验+回滚；唯一 gold 依赖在「分析时根因验证」</td></tr>
+    <tr><td>建新 skill</td><td>只改，不建</td><td>支持"从零建"模式</td></tr>
+  </tbody>
+</table>
+
+<h2>5 · 同一个例子，两边各走一遍</h2>
+<p>抽象流程看完，用一个具体例子把每个环节走一遍，差别会更扎实。</p>
+
+<div class="callout">
+  <p><strong>例子设定</strong></p>
+  <p>Skill：<code>xlsx</code>（表格操作）。当前 <code>SKILL.md</code> 的「## 区间公式」一节只写了"用 SUM/AVERAGE 对区间求值"，<strong>没说怎么确定区间</strong>。</p>
+  <p>最近一批 <strong>5 段</strong>用到该 skill 的轨迹（任务都是"对某一列求和"）：</p>
+  <ul>
+    <li><strong>失败 ×3</strong>：写的 SUM 区间<strong>含了表头行</strong>（或漏掉最后一行）→ 结果错、被用户纠正。</li>
+    <li><strong>成功 ×2</strong>：<strong>先查了数据行数 / 区域</strong>再写 SUM → 一次做对。</li>
+  </ul>
+</div>
+
+<table>
+  <thead><tr><th style="width:14%">环节</th><th style="width:43%">SkillOpt 对这个例子做的</th><th style="width:43%">Trace2Skill 对这个例子做的</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>① 轨迹来源</strong></td>
+      <td>在数据集上现跑这批求和题（带标准答案）→ 5 段轨迹 ＋ 对错分：<strong>3 错(hard=0) / 2 对(hard=1)</strong>。</td>
+      <td>跑 benchmark ＋ 对标准答案评测 → 同样分出 <strong>3 失败题 / 2 成功题</strong>。</td>
+    </tr>
+    <tr>
+      <td><strong>② 分析"改什么"</strong></td>
+      <td>失败桶(3 段)喂 analyst_error → 读出共性"<strong>SUM 区间含表头/漏末行</strong>"；成功桶(2 段)喂 analyst_success → 共性"<strong>先查数据区域再写公式</strong>"。各产一条改动建议。<br><span style="color:#6b6b6b">从轨迹文本里<strong>推断</strong>根因。</span></td>
+      <td>失败题逐个交给会动手的 agent：它<strong>打开 input.xlsx 复现 → 把区间改成跳过表头 → 重测对标准答案，通过</strong> → 确认根因＝"区间含表头行"；产 失败原因 ＋ 教训"写区间公式前先定数据区域边界"。成功题单遍蒸馏赢法"查行数→定区域→写 SUM→校验"。<br><span style="color:#7a3a5c"><strong>动手复现验证</strong>根因。</span></td>
+    </tr>
+    <tr>
+      <td><strong>③ 合并改动</strong></td>
+      <td>失败改动 ＋ 成功改动合并(失败优先)；两条都指向"先定数据区域" → <strong>支持数＝失败 3 ＋ 成功 2，很高</strong> → 排序靠前，预算 L 内保留。</td>
+      <td>5 条记录各提一个补丁 → 无冲突合并：3 个失败补丁都说"定数据区域" → 去重成一条(反复出现＝高优先)；决定把细节拆成 <code>references/data-region.md</code>，于是"<strong>建该文件 ＋ 在 SKILL.md 加链接</strong>"成对保留。</td>
+    </tr>
+    <tr>
+      <td><strong>④ 写进 skill</strong></td>
+      <td>改<strong>单个 SKILL.md</strong>——「## 区间公式」节追加一句：<br><code>写区间公式前先确定数据区域(跳过表头、含最后一行)，并用一次小检查确认。</code></td>
+      <td>改<strong>skill 目录</strong>——SKILL.md「## 区间公式」加一句要点 ＋ 链接；<strong>新建</strong> <code>references/data-region.md</code> 写详细的"如何探测数据区域"步骤（要点留主文件、细节进 references）。</td>
+    </tr>
+    <tr>
+      <td><strong>⑤ 验证</strong></td>
+      <td>改完的 skill 在<strong>留出集</strong>重跑求和题：分数严格更高 → 接受；否则撤销，改动进拒绝缓冲。</td>
+      <td><strong>没有"改完重跑打分"的环内验证。</strong>补丁写进目录后只做格式校验（行数/链接/frontmatter），不重跑 agent、不按性能 accept/reject。它对"这条改动好不好"的唯一 gold 依赖发生在<strong>更早的分析阶段</strong>（会动手的 agent 复现+重测 gold 确认根因）。</td>
+    </tr>
+    <tr>
+      <td><strong>产物</strong></td>
+      <td>一份更新后的 <code>SKILL.md</code>（多了一条"定区域"规则）。</td>
+      <td>一个更新后的 <strong>skill 目录</strong>：SKILL.md 多一句＋链接，且多了 <code>references/data-region.md</code>。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note"><strong>这个例子里最能看出的两处不同：</strong>② SkillOpt 靠"读轨迹推断"，Trace2Skill 靠"动手复现+重测确认"；④ SkillOpt 只动单文件，Trace2Skill 能把细节<strong>另起一个 references 文件</strong>并保证链接不断。⑤ <strong>只有 SkillOpt 靠"带答案重跑"做环内 gate</strong>（每处改动重测、严格更高才收）；Trace2Skill <strong>没有环内性能 gate</strong>，它的 gold 依赖在更早的"分析时根因验证"。两者的 gold 依赖在线都没有——而我们**也不重建效果反馈**：对齐最成熟的在线方案 Hermes（它刻意不衡量"改动有没有效"），质量靠<strong>入口只在反复≥2才改 ＋ 每改可逆（快照/archive）＋ 持续进化自然收敛 ＋ Curator 周期维护</strong>，<strong>不做"测效果/复发回滚"</strong>。</div>
+
+<h2>6 · 哪个更适合"在线"场景</h2>
+<p>关键事实：<strong>两者最讲究的"验证"在在线场景都用不了</strong>——SkillOpt 的留出集闸门、Trace2Skill 的 agentic 重测，都依赖"标准答案 ＋ 可重放环境"。线上是真实用户在用，既没有 gold，也不能把同一题反复跑。所以两者的"质量保险"我们都得换成别的——而且**不去重建一个在线版的效果反馈**（最成熟的在线方案 Hermes 本就不衡量改动有没有效）：质量靠<strong>只在"反复出现≥2"才改 ＋ 有界且可回滚 ＋ 持续进化自然收敛 ＋ Curator 维护</strong>。</p>
+
+<div class="note green"><strong>取法：</strong>这不是二选一，而是"各取一半"——<br>
+· <strong>"分析该改什么" 学 SkillOpt</strong>：成败分桶找共性 ＋ 显式支持数（天然能做"出现≥2 次才改"的门槛）＋ 改动预算。<br>
+· <strong>"怎么安全改进 skill 目录" 学 Trace2Skill</strong>：多文件目录操作 ＋ 无冲突合并 ＋ 新建文件/链接成对 ＋ 目录健康复查（因为真实 skill 就是文件夹）。<br>
+· <strong>"验证" 谁都不照搬，也不重建</strong>：对齐 Hermes（成熟在线方案不测效果）——入口 ≥2 门槛 ＋ 每改可逆（快照/archive/provenance）＋ 持续进化自然收敛 ＋ Curator 维护。<br>
+· <strong>重型编排</strong>（大批并行 map-reduce / 层级合并）<strong>都不要</strong>：线上是单个 skill、小批、增量、可回滚地慢慢来。</div>
+
+<div class="note warn"><strong>论文一句旁证：</strong>Trace2Skill 实测 +Combined 最稳、+Error 最可靠、<strong>+Success 最不稳</strong>（能 +17.6pp 也能掉到基线下）——所以"用成功经验，但靠『反复出现才采纳』强过滤"是对的。这正支持我们"成功侧保留但弱化、失败优先"的设计。</div>
+
+</body>
+</html>

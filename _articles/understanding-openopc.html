@@ -1,0 +1,560 @@
+---
+title: "理解 OpenOPC：一家会自己组队、干活和成长的 AI 公司"
+date:  2026-07-24
+excerpt: "从 Role、Employee 与 Work Item 出发，理解 OpenOPC 如何让一家 AI 公司自己组队、协作、审稿并把经验沉淀为 Playbook。"
+lang:  zh-CN
+---
+
+<style>
+.art-body{
+      --a-ink: #1a1a1a;
+      --a-muted: #6b6b6b;
+      --a-faint: #9a9a9a;
+      --a-rule: #e6e3dc;
+      --a-paper: #ffffff;
+      --a-soft: #f5f1ea;
+      --a-accent: #8b3a2f;
+      --a-accent-soft: #f5ebe6;
+      --a-plum: #7a3a5c;
+      --a-plum-soft: #f1e6ec;
+      --a-plum-stroke: #b88aa0;
+      --a-forest: #4a6f3a;
+      --a-forest-soft: #ecf0e6;
+      --a-forest-stroke: #a8c0a0;
+      --a-ochre: #a07020;
+      --a-ochre-soft: #f5ecdb;
+      --a-ochre-stroke: #d4a86a;
+      --a-teal: #2a6470;
+      --a-teal-soft: #e6eef0;
+      --a-teal-stroke: #9ab8be;
+      --a-code-bg: #f5f1ea;
+      --a-code-ink: #5a2a22;
+      --a-pre-bg: #1a1a1a;
+      --a-pre-ink: #e4e0d4;
+    }
+    .art-body{
+      max-width: 760px; margin: 0 auto; padding: 48px 24px 80px;
+      background: var(--a-paper); color: var(--a-ink);
+      font-family: "Newsreader", Georgia, "Songti SC", "Noto Serif SC", serif;
+      font-size: 17px; line-height: 1.72;
+    }
+    .art-body .eyebrow{ font-family: "JetBrains Mono", monospace; font-size: 11px;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--a-accent);
+      font-weight: 500; }
+    .art-body h1{ font-size: 34px; line-height: 1.15; font-weight: 500; margin: 12px 0 16px; }
+    .art-body h2{ font-size: 26px; margin: 52px 0 14px; font-weight: 500; }
+    .art-body h3{ font-size: 18px; margin: 32px 0 10px; font-weight: 600; }
+    .art-body .lead{ font-size: 19px; color: var(--a-muted); font-style: italic; margin: 0 0 24px; }
+    .art-body code{ font-family: "JetBrains Mono", monospace; background: var(--a-code-bg);
+      color: var(--a-code-ink); padding: 1px 6px; border-radius: 3px; font-size: 0.88em; }
+    .art-body pre{ background: var(--a-pre-bg); color: var(--a-pre-ink); padding: 16px 20px;
+      border-radius: 4px; overflow: auto; font-size: 13px; line-height: 1.6;
+      font-family: "JetBrains Mono", monospace; }
+    .art-body table{ width: 100%; border-collapse: collapse; margin: 18px 0;
+      border: 1px solid var(--a-rule); border-radius: 4px; font-size: 14.5px;
+      font-family: -apple-system, "Helvetica Neue", "PingFang SC", sans-serif; }
+    .art-body th{ background: var(--a-ink); color: #fff; text-align: left; padding: 10px 14px;
+      font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+    .art-body td{ padding: 11px 14px; border-bottom: 1px solid var(--a-rule); vertical-align: top; }
+    .art-body tr:last-child td{ border-bottom: 0; }
+    .art-body blockquote{ border-left: 3px solid var(--a-accent); padding-left: 18px;
+      color: var(--a-muted); font-style: italic; margin: 22px 0; }
+    .art-body .note{ border-left: 4px solid var(--a-teal); background: var(--a-teal-soft);
+      padding: 14px 18px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 15px; }
+    .art-body .note.warn{ border-left-color: var(--a-ochre); background: var(--a-ochre-soft); }
+    .art-body .note.green{ border-left-color: var(--a-forest); background: var(--a-forest-soft); }
+    .art-body .callout{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 16px 20px; margin: 18px 0; }
+    .art-body .role-card{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 16px 20px; margin: 12px 0; }
+    .art-body .role-card h4{ margin: 0 0 8px; font-size: 15px; color: var(--a-accent); }
+    .art-body .role-card .meta{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+      font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--a-muted); }
+    .art-body .role-card .meta span{ background: var(--a-soft); padding: 2px 9px; border-radius: 3px; }
+    .art-body .step{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-left: 4px solid var(--a-accent); padding: 14px 18px; margin: 12px 0;
+      border-radius: 0 4px 4px 0; }
+    .art-body .step.sub{ border-left-color: var(--a-plum); }
+    .art-body .step.bash{ border-left-color: var(--a-forest); }
+    .art-body .step.user{ border-left-color: var(--a-ochre); }
+    .art-body .step .who{ display: inline-block; padding: 2px 9px; border-radius: 3px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.02em; margin-right: 8px;
+      background: var(--a-accent-soft); color: var(--a-accent); }
+    .art-body .step .who.sub{ background: var(--a-plum-soft); color: var(--a-plum); }
+    .art-body .step .who.bash{ background: var(--a-forest-soft); color: var(--a-forest); }
+    .art-body .step .who.user{ background: var(--a-ochre-soft); color: var(--a-ochre); }
+    .art-body .tree{ background: var(--a-pre-bg); color: var(--a-pre-ink); padding: 18px;
+      border-radius: 4px; font-family: "JetBrains Mono", monospace; font-size: 13px;
+      white-space: pre; overflow: auto; line-height: 1.55; }
+    .art-body .diagram{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 22px; margin: 24px 0; overflow: auto; }
+    .art-body .diagram-title{ font-family: "JetBrains Mono", monospace; font-size: 12px;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-accent);
+      margin-bottom: 12px; }
+    .art-body .diagram svg{ width: 100%; height: auto; display: block; }
+    .art-body .figure-caption{ color: var(--a-muted); font-size: 13.5px; margin-top: 12px;
+      font-style: italic; }
+</style>
+
+<div class="eyebrow">OpenOPC · AI-Native Company</div>
+<p class="lead">OpenOPC 的重点不是“同时启动多个 Agent”，而是把组织、人员、工作流和经验拆成可持续运转的系统。本文用一项落地页任务，讲清 Self-Built、Self-Run、Self-Grown 如何形成闭环。</p>
+
+<div class="note">
+  <strong>项目定位：</strong>OpenOPC 是一个开源的 AI 原生公司运行时。它同时提供浏览器 Office UI 和 CLI；底层 Agent 内核是项目自研的 Native Runtime，模型接入由 LiteLLM 负责，也可以把 Codex、Claude Code、Cursor、OpenCode 等外部 Agent 当作可选执行后端。
+</div>
+
+<h2>1 · 它解决的不是“多 Agent”，而是“组织如何运转”</h2>
+
+<p>一个多 Agent demo 往往是这样的：开几个不同 prompt 的 Agent，让它们并行回答，最后找一个 Agent 汇总。对短任务够用，但一旦任务变长，很快会碰到组织问题：</p>
+
+<ul>
+  <li>到底需要哪些岗位？岗位和具体执行者有什么区别？</li>
+  <li>谁能把任务派给谁？跨层级委派是否允许？</li>
+  <li>一个子任务完成后，谁来审，审稿发生在哪个上下文？</li>
+  <li>上游没完成，下游如何等待；同级任务如何并行？</li>
+  <li>执行中卡住了，是问同事、找经理，还是找人类？</li>
+  <li>这次做对的事，下一次如何被复用？</li>
+</ul>
+
+<p>OpenOPC 把这些问题归纳成三个紧密耦合的机制：</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 1 · OpenOPC 的三个闭环阶段</div>
+  <svg viewBox="0 0 720 250" role="img" aria-label="Self-Built、Self-Run 与 Self-Grown 的闭环">
+    <defs>
+      <marker id="arrow-rust" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#8b3a2f"/>
+      </marker>
+      <marker id="arrow-ochre" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#a07020"/>
+      </marker>
+    </defs>
+    <rect x="20" y="55" width="190" height="82" rx="7" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="115" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#8b3a2f">Self-Built</text>
+    <text x="115" y="111" text-anchor="middle" font-size="12" fill="#6b6b6b">搭岗位 · 选员工</text>
+
+    <line x1="210" y1="96" x2="263" y2="96" stroke="#8b3a2f" stroke-width="2" marker-end="url(#arrow-rust)"/>
+
+    <rect x="265" y="55" width="190" height="82" rx="7" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="360" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#7a3a5c">Self-Run</text>
+    <text x="360" y="111" text-anchor="middle" font-size="12" fill="#6b6b6b">拆任务 · 协作 · 审稿</text>
+
+    <line x1="455" y1="96" x2="508" y2="96" stroke="#8b3a2f" stroke-width="2" marker-end="url(#arrow-rust)"/>
+
+    <rect x="510" y="55" width="190" height="82" rx="7" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="605" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#4a6f3a">Self-Grown</text>
+    <text x="605" y="111" text-anchor="middle" font-size="12" fill="#6b6b6b">归因 · 反思 · Playbook</text>
+
+    <path d="M605 137 C605 218,115 218,115 139" fill="none" stroke="#a07020" stroke-width="2" marker-end="url(#arrow-ochre)"/>
+    <text x="360" y="205" text-anchor="middle" font-size="12" fill="#a07020">经验影响下一次招聘与执行</text>
+  </svg>
+  <p class="figure-caption">红：组织搭建；紫：运行时协作；绿：经验沉淀；赭黄：学习结果回流到下一次组队。</p>
+</div>
+
+<blockquote>Self-Built 决定“公司里有哪些座位、谁来坐”；Self-Run 决定“活怎么流动”；Self-Grown 决定“干完以后谁变强、知识留下多少”。</blockquote>
+
+<h2>2 · 先分清三个词：Role、Talent、Employee</h2>
+
+<p>理解 OpenOPC 的第一道门槛，是不要把岗位和人混为一谈。</p>
+
+<table>
+  <thead><tr><th>概念</th><th>回答的问题</th><th>例子</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Role</strong></td><td>公司需要什么岗位；职责、汇报线、权限和工具是什么</td><td>Designer、Frontend Engineer</td></tr>
+    <tr><td><strong>Talent Template</strong></td><td>人才市场上有哪些候选人蓝图</td><td>React Specialist、Conversion Copywriter</td></tr>
+    <tr><td><strong>Employee</strong></td><td>这次具体是谁坐在岗位上；其个人经验是什么</td><td>Alice、frontend-landing-expert</td></tr>
+  </tbody>
+</table>
+
+<div class="role-card">
+  <h4>Role 是座位，不是人</h4>
+  <p>Role 定义组织结构：向谁汇报、能委派给谁、可以使用哪些工具。它相对稳定。今天的 Designer 可以是 Alice，下次也可以换成另一位员工。</p>
+  <div class="meta"><span>结构</span><span>职责</span><span>权限</span><span>汇报关系</span></div>
+</div>
+
+<div class="role-card">
+  <h4>Employee 是坐在座位上的具体人</h4>
+  <p>Employee 有唯一身份、来源模板和历史经验。同一个 Role 由不同 Employee 担任，执行结果会不同：老员工带着过去的经验，新员工主要带着模板人设和共享 Playbook。</p>
+  <div class="meta"><span>经验分</span><span>已学技能</span><span>动态画像</span></div>
+</div>
+
+<p>为什么一定要拆开？因为<strong>岗位需要稳定，人员需要流动；岗位规定权责，人员积累经验</strong>。如果二者绑死，系统就无法在保留组织结构的同时换人，也无法准确回答“这次究竟是谁做得好”。</p>
+
+<h2>3 · Self-Built：开工前先把班子搭好</h2>
+
+<p><strong>Self-Built</strong> 是执行前的 staffing 阶段。当前实现从用户选定的组织架构开始：可以是内置的 corporate 架构，也可以是保存下来的自定义组织。组织架构里是一组 Role 及其 <code>reports_to</code> 汇报关系。</p>
+
+<div class="note warn">
+  <strong>一个容易被文案带偏的地方：</strong>“Self-Built 自动搭组织”不等于每次请求都让 LLM 从空白生成一棵任意组织树。当前主要路径是加载选定架构，再针对本次目标为现有 Role 做 staffing；用户也可以编辑、保存和导入组织架构。
+</div>
+
+<h3>3.1 招聘器比较两类人</h3>
+
+<p>每个 Role 会形成一条招聘需求。招聘器先判断这个岗位是否值得专门筛选人才；如果需要，就同时看：</p>
+
+<ul>
+  <li><strong>Existing Employee Pool</strong>：组织里已有的员工，带经验分、已学技能和历史表现；</li>
+  <li><strong>Talent Template Pool</strong>：本地或导入的人才模板，代表可以新招的专业人选。</li>
+</ul>
+
+<p>每个 Role 最终会落到四种决策之一：</p>
+
+<table>
+  <thead><tr><th>决策</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td><code>existing_staff</code></td><td>复用有经验的现有员工</td></tr>
+    <tr><td><code>proposed_hire</code></td><td>从人才模板中招聘新员工</td></tr>
+    <tr><td><code>direct_role_execution</code></td><td>不需要专门选人，按岗位默认能力执行</td></tr>
+    <tr><td><code>fallback_role_only</code></td><td>没有可信候选人，退回岗位基础执行</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 一份落地页任务会怎样组队</h3>
+
+<p>假设用户提出：</p>
+
+<blockquote>为“AI 记账助手”制作一个营销落地页，需要文案、视觉设计、前端实现和质量把关。</blockquote>
+
+<p>组织架构里有 PM、Designer、Frontend Engineer、Copywriter 和 Reviewer。招聘器可能做出如下决定：</p>
+
+<table>
+  <thead><tr><th>Role</th><th>Staffing</th><th>理由</th></tr></thead>
+  <tbody>
+    <tr><td>PM</td><td>直接角色执行</td><td>通用协调岗位，无需专门招聘</td></tr>
+    <tr><td>Designer</td><td>复用 Alice</td><td>Alice 有落地页经验和相关技能</td></tr>
+    <tr><td>Frontend Engineer</td><td>招聘 React Specialist</td><td>现有前端员工的经验与任务不匹配</td></tr>
+    <tr><td>Copywriter</td><td>招聘 Conversion Copywriter</td><td>组织里没有现成的转化文案员工</td></tr>
+  </tbody>
+</table>
+
+<p>用户确认招聘提案后，Talent Template 才会被实例化为 Employee。最终形成一份 <strong>Staffing Override</strong>——本次运行中 Role 到 Employee 的具体映射。</p>
+
+<div class="tree">Designer          → alice-001
+Frontend Engineer → frontend-landing-expert
+Copywriter        → copywriter-conversion
+</div>
+
+<h2>4 · Self-Run：任务树不是预先画好，而是在运行中长出来</h2>
+
+<p><strong>Self-Run</strong> 是 OpenOPC 最核心的部分。它不只是并行调用几次模型，而是围绕 <strong>Work Item</strong> 运转。</p>
+
+<p><strong>Work Item（工作项）</strong> 是公司模式下真正的业务任务单元，可以理解为看板上的一张卡。它记录要做什么、由哪个 Role/Seat 持有、当前 Phase、依赖哪些上游、需要通过什么 Gate。</p>
+
+<h3>4.1 Projection 只是组织脚手架</h3>
+
+<p>运行开始前，系统会根据组织拓扑生成一份 runtime plan。这里的 <strong>Projection（任务投影）</strong> 描述每个座位是 manager 还是 executor、默认审稿规则、可以委派给谁。</p>
+
+<p>但它<strong>不是本次任务的完整任务树</strong>。启动时只创建根 Work Item；这次到底拆几块、兄弟任务谁依赖谁，由每一层 manager 在自己的 dispatch turn 中动态决定。</p>
+
+<div class="note green"><strong>结论：</strong>组织结构预先存在，业务任务树运行时生长。PM 只拆自己的下一层；如果下属也是 manager，它再继续拆下一层。</div>
+
+<h3>4.2 Dispatch turn 调用什么工具</h3>
+
+<p>经理拿到需要向下拆解的 Work Item 时，会进入 <strong>dispatch turn</strong>，调用公司协作工具 <code>delegate_work</code>。这个调用会声明：</p>
+
+<ul>
+  <li>子任务的标题、目标和交付物；</li>
+  <li>分给哪个直属下级 Role；</li>
+  <li>兄弟子任务之间的 <code>depends_on</code>；</li>
+  <li>必要的审稿和协作约束。</li>
+</ul>
+
+<pre><code>delegate_work(
+  children=[
+    { role: "copywriter", title: "撰写落地页文案" },
+    { role: "designer", title: "设计视觉稿",
+      depends_on: ["copywriting"] },
+    { role: "frontend_engineer", title: "实现页面",
+      depends_on: ["design"] }
+  ]
+)</code></pre>
+
+<p>调用成功后，系统创建子 Work Item，把业务依赖写入 <strong>Dependency DAG（依赖有向无环图）</strong>，然后让父 Work Item 进入 <code>WAITING_FOR_CHILDREN</code>。</p>
+
+<div class="note warn">
+  <strong>委派边界：</strong>正常运行路径下，<code>delegate_work</code> 面向组织拓扑允许的下游角色，当前文档化的默认模型是直属下级。PM 不替下属的团队继续拆第三层；下属 manager 收到自己的卡后，在自己的 dispatch turn 中继续拆。
+</div>
+
+<h3>4.3 Phase 是唯一权威状态</h3>
+
+<p>每张 Work Item 由一个 <strong>Phase（阶段）</strong>描述当前业务状态。看板列、当前负责人和是否可调度，都是从 Phase 推导出来的。</p>
+
+<table>
+  <thead><tr><th>阶段组</th><th>典型 Phase</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td>Todo</td><td><code>READY</code> / <code>WAITING_DEPENDENCIES</code></td><td>可调度，或等待上游</td></tr>
+    <tr><td>In progress</td><td><code>RUNNING</code> / <code>WAITING_FOR_PEER</code> / <code>WAITING_FOR_CHILDREN</code></td><td>执行中，或等待同事/子任务</td></tr>
+    <tr><td>Review</td><td><code>AWAITING_MANAGER_REVIEW</code> / <code>AWAITING_HUMAN</code></td><td>等经理或人类判断</td></tr>
+    <tr><td>Terminal</td><td><code>APPROVED</code> / <code>FAILED</code> / <code>CANCELLED</code></td><td>完成、失败或取消</td></tr>
+  </tbody>
+</table>
+
+<p>调度器持续刷新 DAG：没有依赖的卡可以并行进入 <code>READY</code>；上游未通过时，下游保持等待；上游 <code>APPROVED</code> 后，下游才进入可执行状态。</p>
+
+<h2>5 · 最关键的细节：PM 等孩子时，到底在哪个上下文工作</h2>
+
+<p>当 PM 用 <code>delegate_work</code> 派出子任务后，它的父 Work Item 进入 <code>WAITING_FOR_CHILDREN</code>。这很容易造成一个误会：</p>
+
+<blockquote>是不是只有所有子任务做完，系统才给 PM 发消息？既然都做完了，PM 还被激活干什么？</blockquote>
+
+<p>答案是：<strong>PM 在这段期间会多次被激活，但每次进入的是不同上下文。</strong></p>
+
+<div class="diagram">
+  <div class="diagram-title">图 2 · PM 的三种独立上下文</div>
+  <svg viewBox="0 0 720 390" role="img" aria-label="PM 父任务、审稿任务和收件箱上下文的分离">
+    <defs>
+      <marker id="ctx-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#8b3a2f"/>
+      </marker>
+      <marker id="ctx-return" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#a07020"/>
+      </marker>
+    </defs>
+
+    <rect x="20" y="32" width="210" height="68" rx="7" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="125" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">PM 父 Work Item</text>
+    <text x="125" y="82" text-anchor="middle" font-size="12" fill="#6b6b6b">WAITING_FOR_CHILDREN</text>
+
+    <line x1="230" y1="66" x2="280" y2="66" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ctx-arrow)"/>
+
+    <rect x="282" y="32" width="190" height="68" rx="7" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="377" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3a5c">子 Work Items</text>
+    <text x="377" y="82" text-anchor="middle" font-size="12" fill="#6b6b6b">execute / dependency DAG</text>
+
+    <line x1="472" y1="66" x2="520" y2="66" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ctx-arrow)"/>
+
+    <rect x="522" y="32" width="178" height="68" rx="7" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="611" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6f3a">结果 / 阻塞</text>
+    <text x="611" y="82" text-anchor="middle" font-size="12" fill="#6b6b6b">触发不同处理路径</text>
+
+    <path d="M611 100 L611 145 L515 145" fill="none" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ctx-arrow)"/>
+    <rect x="305" y="122" width="210" height="68" rx="7" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="410" y="150" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3a5c">独立 Review Work Item</text>
+    <text x="410" y="172" text-anchor="middle" font-size="12" fill="#6b6b6b">approve / reject 单个子交付</text>
+
+    <path d="M611 100 L611 235 L515 235" fill="none" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ctx-arrow)"/>
+    <rect x="305" y="212" width="210" height="68" rx="7" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="410" y="240" text-anchor="middle" font-size="13" font-weight="700" fill="#2a6470">Inbox / Comms</text>
+    <text x="410" y="262" text-anchor="middle" font-size="12" fill="#6b6b6b">回复 blocker、协调与决策</text>
+
+    <path d="M305 156 C230 156,230 300,125 300" fill="none" stroke="#a07020" stroke-width="2"/>
+    <path d="M305 246 C230 246,230 300,125 300" fill="none" stroke="#a07020" stroke-width="2"/>
+    <rect x="20" y="300" width="210" height="68" rx="7" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="125" y="328" text-anchor="middle" font-size="13" font-weight="700" fill="#a07020">所有 children APPROVED</text>
+    <text x="125" y="350" text-anchor="middle" font-size="12" fill="#6b6b6b">原父卡进入 aggregate</text>
+  </svg>
+  <p class="figure-caption">紫：每个子任务的独立审稿上下文；蓝：即时协作收件箱；黄：所有子任务通过后，原父 Work Item 才恢复并做整合。</p>
+</div>
+
+<h3>5.1 子任务完成：生成独立 Review Work Item</h3>
+
+<p>以 copywriting 为例。执行者完成后，原子卡进入 <code>AWAITING_MANAGER_REVIEW</code>。系统先形成结构化 handoff，再创建一张独立的 review Work Item 给审稿人——默认是直属 manager，也可以由角色策略指定其他 reviewer。</p>
+
+<p>PM 在这张独立 review 卡中只审当前交付：</p>
+
+<ul>
+  <li><code>approve</code>：子卡进入 <code>APPROVED</code>；</li>
+  <li><code>reject</code>：子卡进入 <code>READY_FOR_REWORK</code>，携带修改意见重新执行。</li>
+</ul>
+
+<p>它不是在 PM 那张 <code>WAITING_FOR_CHILDREN</code> 父卡中审稿。这样做的价值是：审稿有自己的身份、状态、上下文和重试路径，不会污染父任务的整合语义。</p>
+
+<h3>5.2 执行中遇到阻塞：进入 Inbox / Comms</h3>
+
+<p>如果前端发现按钮文案冲突，可以给 Copywriter 或 PM 发送 blocker 消息。消息进入目标 Role Session 的 inbox；目标 Role 被唤醒处理后，原任务才能从 <code>WAITING_FOR_PEER</code> 恢复。</p>
+
+<p>这也不是 PM 父卡的上下文，而是通信触发的临时协作上下文。</p>
+
+<h3>5.3 所有子任务通过：父 Work Item 做 Aggregate</h3>
+
+<p>只有当所有 direct children 都 <code>APPROVED</code>，PM 原来的父 Work Item 才从 <code>WAITING_FOR_CHILDREN</code> 恢复，进入 <strong>aggregate turn</strong>。</p>
+
+<p>PM 此时不是重复执行子任务，而是做跨角色整合：统一文案、设计和代码，发现不一致，整理交付说明，再把结果交给更上一级或进入最终 deliver。</p>
+
+<div class="note green"><strong>一句话：</strong>等待孩子的父卡只负责最终整合；单项审稿由独立 review 卡承担；中途协调走 inbox。一个 Role 可以被多次唤醒，但每次持有的业务上下文不同。</div>
+
+<h2>6 · 五种动作如何把一次任务推到交付</h2>
+
+<p>README 把 Self-Run 概括为五种动作。它们在运行时对应不同的 turn 和 Phase 变化：</p>
+
+<table>
+  <thead><tr><th>动作</th><th>运行时含义</th><th>典型结果</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Execute</strong></td><td>具体执行工作项</td><td>完成后进入 manager review</td></tr>
+    <tr><td><strong>Delegate</strong></td><td>manager 调用 <code>delegate_work</code> 拆给直属下级</td><td>父卡等待 children</td></tr>
+    <tr><td><strong>Review</strong></td><td>在独立 review Work Item 中给 verdict</td><td>approve 或 rework</td></tr>
+    <tr><td><strong>Integrate</strong></td><td>所有 children 通过后 aggregate</td><td>形成上层统一交付物</td></tr>
+    <tr><td><strong>Rework</strong></td><td>执行者带审稿反馈重新 execute</td><td>再次进入 review</td></tr>
+  </tbody>
+</table>
+
+<div class="tree">PM intake / dispatch
+└── copywriting (execute)
+    ├── report / handoff
+    └── PM review
+        ├── approve → APPROVED
+        └── reject  → READY_FOR_REWORK → execute again
+└── design (depends_on: copywriting)
+└── frontend (depends_on: design)
+
+all children APPROVED
+└── PM aggregate
+    └── deliver → user
+</div>
+
+<h2>7 · 阻塞不会只变成一句“我做不了”</h2>
+
+<p>真实任务不可能在开工前看见所有障碍。OpenOPC 把阻塞分成两个层级。</p>
+
+<h3>7.1 团队内部可以解决</h3>
+
+<p><strong>Comms</strong> 是 Role 之间的通信机制，支持私信、广播、会议和系统通知。执行者发出需要回复的 blocker 后，自己的 Work Item 会等待 peer；接收方因新消息被重新激活，回复到达后原任务继续。</p>
+
+<h3>7.2 超出团队权限</h3>
+
+<p>如果问题涉及人类才能决定的方向、风险或权限，系统进入 <strong>Escalation</strong>，让 Work Item 处于 <code>AWAITING_HUMAN</code>。高风险工具调用也会通过 Approval 机制升级给人类，而不是让 Agent 默默执行。</p>
+
+<div class="callout">
+  <p><strong>判断方式可以简化为：</strong></p>
+  <ul>
+    <li>同事能回答、经理能协调 → 走 Comms；</li>
+    <li>方向、权限、高风险操作只有用户能决定 → 走 Escalation / Approval。</li>
+  </ul>
+</div>
+
+<h2>8 · Agent 本身是怎么运行的</h2>
+
+<p>OpenOPC 没有把 LangChain、CrewAI 或 AutoGen 当作核心 Agent 内核。项目有自己的 Native Runtime，负责模型回合、工具调用、上下文装配和公司模式契约；LiteLLM 负责连接和路由底层模型。</p>
+
+<p>Role 可以使用的工具由角色配置和执行模式决定，主要分为：</p>
+
+<table>
+  <thead><tr><th>工具组</th><th>代表工具</th></tr></thead>
+  <tbody>
+    <tr><td>文件与搜索</td><td><code>file_read</code>、<code>file_write</code>、<code>grep</code>、<code>glob</code></td></tr>
+    <tr><td>执行与代码</td><td><code>shell_exec</code>、<code>python_exec</code>、<code>git_diff</code></td></tr>
+    <tr><td>浏览器与 Web</td><td><code>browser_navigate</code>、<code>web_search</code>、<code>web_fetch</code></td></tr>
+    <tr><td>公司协作</td><td><code>delegate_work</code>、<code>send_dm</code>、<code>ask_peer_and_wait</code>、<code>manager_board_read</code></td></tr>
+    <tr><td>子 Agent</td><td><code>agent_spawn</code>、<code>agent_wait</code>、<code>agent_send</code></td></tr>
+  </tbody>
+</table>
+
+<p>Company Mode 的 manager 能不能拆活、能联系谁，并不只是 prompt 建议，而是由组织拓扑和工具调用边界共同约束；危险动作还要经过统一审批层。</p>
+
+<h2>9 · Self-Grown：成长主要记在人身上，知识再回到组织</h2>
+
+<p>Self-Run 完成后，系统已经有了最重要的归因线索：每张任务都携带 <strong>Employee Assignment</strong>，说明这项工作由哪个 Employee、以哪个 Role、在什么 domain 下完成。</p>
+
+<p>Self-Grown 因此分两层学习。</p>
+
+<h3>9.1 Employee 层：形成个人履历</h3>
+
+<p>任务结果会更新该 Employee 的成功、部分成功、失败统计，并按 Role、domain 和 pattern 细分。系统据此形成：</p>
+
+<ul>
+  <li><strong>Experience Score</strong>：特定岗位和领域下的经验分；</li>
+  <li><strong>Delta Profile</strong>：高频成功做法、检查清单、审稿人和工具偏好、风险提醒；</li>
+  <li><strong>Delta Context</strong>：把动态画像渲染成下一次执行时可注入的上下文。</li>
+</ul>
+
+<p>所以 Alice 下次再做落地页时，不只带着“你是 Designer”的通用身份，还会带着“首屏要有 CTA、出图前冻结文案、检查三端适配”等自己的历史经验。</p>
+
+<h3>9.2 组织层：重复经验晋升为 Playbook</h3>
+
+<p><strong>Reflection（反思）</strong>并不是让 LLM 重新通读完整聊天、自由写一篇复盘。运行过程中，各 Work Item 会先产出结构化 handoff 原料；整次交付结束、相关任务进入终态后，系统才按 Employee 分组，把这些结构化字段和可选用户反馈组装成复盘记录。</p>
+
+<p>当同一 Employee 在同一个 Role + domain pattern 下至少积累两次 Reflection，而且成功做法、检查项等内容重复出现，系统可以把它晋升为一份 <strong>Playbook / Skill</strong>，以 <code>SKILL.md</code> 存入 Skill Library。</p>
+
+<div class="note warn"><strong>两条路径不要混淆：</strong>项目 Reflection 是从结构化执行原料按规则组装；反馈触发的 Self-Evolution 则可以由 manager 等 Role 经 LLM 产出员工经验 patch。它们都会影响员工经验，但不是同一条流程。</div>
+
+<h3>9.3 新员工如何继承</h3>
+
+<p>新员工从 Talent Template 入职时没有个人历史。它不会直接复制 Alice 的私人履历，但共享 Playbook 位于 Skill Library 中，后来的员工也能在运行时看到。</p>
+
+<blockquote>个人经验让老员工越来越值钱；共享 Playbook 让组织不会因为换人而失忆。</blockquote>
+
+<h2>10 · 三个机制如何闭环</h2>
+
+<p>回到“AI 记账助手落地页”：</p>
+
+<div class="step">
+  <span class="who">Self-Built</span><strong>先选组织和人</strong>
+  <p>PM 走默认角色执行，Designer 复用 Alice，前端和文案从 Talent Template 招聘。</p>
+</div>
+
+<div class="step sub">
+  <span class="who sub">Self-Run</span><strong>逐层拆出 Work Item</strong>
+  <p>PM 调用 <code>delegate_work</code>；文案完成后独立 review；设计和前端按 DAG 依次释放；阻塞走 inbox；全部通过后 PM aggregate 并 deliver。</p>
+</div>
+
+<div class="step bash">
+  <span class="who bash">Self-Grown</span><strong>把结果归因和沉淀</strong>
+  <p>Alice 的成功记到她本人；前端第一次因响应式被 reject，形成风险提醒；重复有效经验晋升为共享 Playbook。</p>
+</div>
+
+<div class="step user">
+  <span class="who user">Next Run</span><strong>经验返回下一次组队</strong>
+  <p>招聘器更愿意复用表现稳定的 Alice；新 Designer 即使没有履历，也能继承组织的落地页 Playbook。</p>
+</div>
+
+<h2>11 · 它和普通多 Agent 编排的真正区别</h2>
+
+<table>
+  <thead><tr><th>普通多 Agent 流程</th><th>OpenOPC</th></tr></thead>
+  <tbody>
+    <tr><td>Agent 身份常和 prompt 绑定</td><td>Role、Talent Template、Employee 分层</td></tr>
+    <tr><td>任务通常由预写 workflow 固定</td><td>组织先存在，任务树由各层 manager 动态长出</td></tr>
+    <tr><td>完成后直接汇总文本</td><td>执行、handoff、独立 review、rework、aggregate 分离</td></tr>
+    <tr><td>阻塞依赖自由对话</td><td>Comms、Phase、Escalation 共同控制暂停与恢复</td></tr>
+    <tr><td>经验通常留在会话里</td><td>按 Employee 归因，再把重复经验晋升为共享 Skill</td></tr>
+  </tbody>
+</table>
+
+<p>这种设计当然更重：它引入组织配置、状态机、消息系统、审稿卡和经验存储。对于一个一次性小问题，Task Mode 更直接；对于跨角色、有审稿、有依赖、需要长期复用经验的复杂目标，Company Mode 才显示出价值。</p>
+
+<h2>12 · 上手：先跑一个最小公司任务</h2>
+
+<p>OpenOPC 要求 Python 3.10+，项目推荐用 <code>uv</code>。最小启动路径：</p>
+
+<pre><code>cd /path/to/OpenOPC
+uv python install 3.12
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install -e .
+
+# 初始化配置、记忆、技能和项目目录
+uv run opc init
+
+# 在 .opc/config/llm_config.yaml 配置模型与 API key
+# 启动 Office UI
+uv run opc ui</code></pre>
+
+<p>打开 <code>http://localhost:8765</code>，创建会话并选择 Company Mode。也可以直接从 CLI 运行：</p>
+
+<pre><code>uv run opc chat -p demo \
+  --mode company \
+  --company-profile corporate \
+  "为 AI 记账助手制作一套可交付的营销落地页"</code></pre>
+
+<div class="note green">
+  <strong>第一次体验建议：</strong>不要只看最终回复。重点打开 Kanban、Agents、Comms 和 Execution Progress，观察 Work Item 怎样被拆出来、如何等待依赖、review 为什么是一张独立卡，以及 manager 何时从 WAITING_FOR_CHILDREN 回来 aggregate。
+</div>
+
+<h2>13 · 收束</h2>
+
+<p>如果只记住六句话：</p>
+
+<ol>
+  <li>OpenOPC 的核心不是多启动几个 Agent，而是给 Agent 加上组织运行时。</li>
+  <li>Role 是岗位，Talent Template 是候选人蓝图，Employee 是会积累经验的具体人。</li>
+  <li>Self-Built 先选择组织架构，再为每个 Role 比较老员工与新人才。</li>
+  <li>Self-Run 的任务树由各层 manager 用 <code>delegate_work</code> 逐层长出，Dependency DAG 决定并行与等待。</li>
+  <li>PM 的父卡、单项 review 卡、inbox 是三个不同上下文；所有子任务通过后，父卡才回来 aggregate。</li>
+  <li>Self-Grown 先把结果归因到 Employee，再把重复经验升级成整个组织可继承的 Playbook。</li>
+</ol>
+
+<blockquote>OpenOPC 想构建的，不是一次对话里看起来很忙的 Agent 群，而是一家公司在多次任务之后仍然知道：该招谁、该怎么协作、过去学到了什么。</blockquote>
+
+<p>项目地址：<a href="https://github.com/HKUDS/OpenOPC">github.com/HKUDS/OpenOPC</a></p>

@@ -1,0 +1,1306 @@
+---
+title: "第一次用 Paperclip：从董事会视角理解这套系统"
+date:  2026-07-24
+excerpt: "从董事会视角理解 Paperclip：组织树、任务树、战略闸门，以及从建公司到 done 的完整 agent 接棒与 Prompt 原文。"
+lang:  zh-CN
+---
+
+<style>
+.art-body{
+      --a-ink:       #1a1a1a;
+      --a-muted:     #6b6b6b;
+      --a-faint:     #9a9a9a;
+      --a-rule:      #e6e3dc;
+      --a-paper:     #ffffff;
+      --a-soft:      #f5f1ea;
+      --a-accent:    #8b3a2f;
+      --a-accent-soft: #f5ebe6;
+
+      --a-plum:    #7a3a5c; --a-plum-soft:   #f1e6ec; --a-plum-stroke:   #b88aa0;
+      --a-forest:  #4a6f3a; --a-forest-soft: #ecf0e6; --a-forest-stroke: #a8c0a0;
+      --a-ochre:   #a07020; --a-ochre-soft:  #f5ecdb; --a-ochre-stroke:  #d4a86a;
+      --a-teal:    #2a6470; --a-teal-soft:   #e6eef0; --a-teal-stroke:   #9ab8be;
+
+      --a-code-bg:    #f5f1ea;
+      --a-code-ink:   #5a2a22;
+      --a-pre-bg:     #1a1a1a;
+      --a-pre-ink:    #e4e0d4;
+    }
+
+    .art-body{
+      max-width: 760px; margin: 0 auto; padding: 48px 24px 80px;
+      background: var(--a-paper); color: var(--a-ink);
+      font-family: "Newsreader", Georgia, "Songti SC", "Noto Serif SC", serif;
+      font-size: 17px; line-height: 1.72;
+    }
+    .art-body .eyebrow{ font-family: "JetBrains Mono", monospace; font-size: 11px;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--a-accent);
+      font-weight: 500; }
+    .art-body h1{ font-size: 34px; line-height: 1.15; font-weight: 500; margin: 12px 0 16px; }
+    .art-body h2{ font-size: 26px; margin: 52px 0 14px; font-weight: 500; }
+    .art-body h3{ font-size: 18px; margin: 32px 0 10px; font-weight: 600; }
+    .art-body .lead{ font-size: 19px; color: var(--a-muted); font-style: italic; margin: 0 0 24px; }
+    .art-body code{ font-family: "JetBrains Mono", monospace; background: var(--a-code-bg);
+      color: var(--a-code-ink); padding: 1px 6px; border-radius: 3px; font-size: 0.88em; }
+    .art-body pre{ background: var(--a-pre-bg); color: var(--a-pre-ink); padding: 16px 20px;
+      border-radius: 4px; overflow: auto; font-size: 13px; line-height: 1.6;
+      font-family: "JetBrains Mono", monospace; }
+    .art-body table{ width: 100%; border-collapse: collapse; margin: 18px 0;
+      border: 1px solid var(--a-rule); border-radius: 4px; font-size: 14.5px;
+      font-family: -apple-system, "Helvetica Neue", "PingFang SC", sans-serif; }
+    .art-body th{ background: var(--a-ink); color: #fff; text-align: left; padding: 10px 14px;
+      font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+    .art-body td{ padding: 11px 14px; border-bottom: 1px solid var(--a-rule); vertical-align: top; }
+    .art-body tr:last-child td{ border-bottom: 0; }
+    .art-body blockquote{ border-left: 3px solid var(--a-accent); padding-left: 18px;
+      color: var(--a-muted); font-style: italic; margin: 22px 0; }
+    .art-body .note{ border-left: 4px solid var(--a-teal); background: var(--a-teal-soft);
+      padding: 14px 18px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 15px; }
+    .art-body .note.warn{ border-left-color: var(--a-ochre);  background: var(--a-ochre-soft); }
+    .art-body .note.green{ border-left-color: var(--a-forest); background: var(--a-forest-soft); }
+    .art-body .callout{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 16px 20px; margin: 18px 0; }
+    .art-body .role-card{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 16px 20px; margin: 12px 0; }
+    .art-body .role-card h4{ margin: 0 0 8px; font-size: 15px; color: var(--a-accent); }
+    .art-body .role-card .meta{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+      font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--a-muted); }
+    .art-body .role-card .meta span{ background: var(--a-soft); padding: 2px 9px; border-radius: 3px; }
+    .art-body .step{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-left: 4px solid var(--a-accent); padding: 14px 18px; margin: 12px 0;
+      border-radius: 0 4px 4px 0; }
+    .art-body .step.sub{ border-left-color: var(--a-plum); }
+    .art-body .step.bash{ border-left-color: var(--a-forest); }
+    .art-body .step.user{ border-left-color: var(--a-ochre); }
+    .art-body .step .who{ display: inline-block; padding: 2px 9px; border-radius: 3px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.02em; margin-right: 8px;
+      background: var(--a-accent-soft); color: var(--a-accent); }
+    .art-body .step .who.sub{ background: var(--a-plum-soft);   color: var(--a-plum); }
+    .art-body .step .who.bash{ background: var(--a-forest-soft); color: var(--a-forest); }
+    .art-body .step .who.user{ background: var(--a-ochre-soft);  color: var(--a-ochre); }
+    .art-body .tree{ background: var(--a-pre-bg); color: var(--a-pre-ink); padding: 18px;
+      border-radius: 4px; font-family: "JetBrains Mono", monospace; font-size: 13px;
+      white-space: pre; overflow: auto; line-height: 1.55; }
+    .art-body .diagram{ background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 4px; padding: 22px; margin: 24px 0; overflow: auto; }
+    .art-body .diagram-title{ font-family: "JetBrains Mono", monospace; font-size: 12px;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-accent);
+      margin-bottom: 12px; }
+    .art-body .diagram svg{ width: 100%; height: auto; display: block; }
+    .art-body .figure-caption{ color: var(--a-muted); font-size: 13.5px; margin-top: 12px;
+      font-style: italic; }
+
+    /* prompt-block bilingual — standalone；convert 会把 body 收成 .art-body */
+    .art-body .prompt-block{ margin: 12px 0; }
+    .art-body .prompt-block > pre{ margin: 0; font-size: 12.5px; line-height: 1.55; }
+    .art-body .prompt-block > pre[data-lang]{ display: none; }
+    .art-body[data-lang="zh"] .prompt-block > pre[data-lang="zh"], .art-body[data-lang="en"] .prompt-block > pre[data-lang="en"]{ display: block; }
+    .art-body .lang-toggle{
+      position: fixed; top: 12px; right: 16px; z-index: 100;
+      background: var(--a-paper); border: 1px solid var(--a-rule);
+      border-radius: 999px; padding: 2px; display: flex;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+    .art-body .lang-toggle button{
+      border: 0; background: transparent; color: var(--a-muted);
+      padding: 6px 14px; cursor: pointer; border-radius: 999px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    }
+    .art-body .lang-toggle button:hover{ color: var(--a-accent); }
+    .art-body .lang-toggle button.active{ background: var(--a-ink); color: var(--a-paper); }
+</style>
+
+<div class="lang-toggle">
+  <button data-target="zh" class="active">中文</button>
+  <button data-target="en">EN</button>
+</div>
+
+<div class="eyebrow">Paperclip · 心智模型</div>
+<p class="lead">你不是在开 20 个 agent 终端，而是在管一家 AI 公司。前面用董事会视角讲清组织与闸门；最后用一条时间线，逐步看每个 agent 读到的 Prompt 原文，以及如何把下一棒交出去。<br><span style="font-size:14px;color:var(--a-muted);">右上角可切换 §12 Prompt 原文的中英文显示。</span></p>
+
+<div class="note">
+  <strong>背景：</strong>Paperclip（<a href="https://paperclip.ing">paperclip.ing</a>）是开源的 agent 编排控制面。本地一行 <code>npx paperclipai onboard --yes</code> 就能跑起来。下文基于官方文档与源码约定，站在<strong>董事会（board operator）</strong>视角整理。
+</div>
+
+<h2>1 · 你是谁</h2>
+
+<p>在 Paperclip 里，最容易错位的身份是：把自己当成「写代码的那个人」。</p>
+
+<p>更准确的定位是：</p>
+
+<blockquote>你是董事会。Agents 是员工。Paperclip 是这家公司的操作系统。</blockquote>
+
+<p>系统里有公司目标、组织架构、任务板、预算和审批。你定方向、批关键决策、看结果；真正拆活和执行的是 agents。Paperclip 负责别让他们乱跑、撞车、烧穿预算。</p>
+
+<div class="role-card">
+  <h4>一句话心智模型</h4>
+  <p>OpenClaw / Claude Code / Codex 像「员工」；Paperclip 像「公司」——组织、委派、治理、记账都在这层完成。</p>
+  <div class="meta">
+    <span>你 = 董事会</span>
+    <span>CEO/CTO = 管理岗 agent</span>
+    <span>IC = 执行岗 agent</span>
+  </div>
+</div>
+
+<h2>2 · 你「分派」时，实际在分什么</h2>
+
+<p>上手时第二个误会：以为自己在派一张工单。</p>
+
+<p>默认路径里，你丢进去的通常是<strong>公司目标（mission）</strong>，不是「今晚改某一个文件」。</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 1 · 从 mission 到执行</div>
+  <svg viewBox="0 0 720 280" role="img" aria-label="mission 到执行的主流程">
+    <defs>
+      <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#8b3a2f"/>
+      </marker>
+      <marker id="ar-ochre" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#a07020"/>
+      </marker>
+    </defs>
+
+    <!-- row 1 -->
+    <rect x="20" y="30" width="130" height="52" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="85" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#a07020">你设 mission</text>
+
+    <line x1="150" y1="56" x2="190" y2="56" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="190" y="30" width="140" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="260" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">CEO heartbeat</text>
+
+    <line x1="330" y1="56" x2="370" y2="56" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="370" y="30" width="150" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="445" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">提交战略</text>
+
+    <line x1="520" y1="56" x2="560" y2="56" stroke="#a07020" stroke-width="2" marker-end="url(#ar-ochre)"/>
+
+    <rect x="560" y="30" width="140" height="52" rx="6" fill="#f5ecdb" stroke="#d4a86a"/>
+    <text x="630" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#a07020">你批准</text>
+
+    <!-- row 2 -->
+    <line x1="630" y1="82" x2="630" y2="130" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="545" y="130" width="155" height="52" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="622" y="160" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">拆任务并委派</text>
+
+    <line x1="545" y1="156" x2="390" y2="156" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="230" y="130" width="160" height="52" rx="6" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="310" y="160" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3a5c">下属 heartbeat</text>
+
+    <line x1="230" y1="156" x2="170" y2="156" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="20" y="130" width="150" height="52" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="95" y="160" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6f3a">干活 / 更新状态</text>
+
+    <!-- row 3 note -->
+    <rect x="20" y="210" width="680" height="44" rx="6" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="360" y="237" text-anchor="middle" font-size="13" fill="#2a6470">CEO 继续巡检；缺人就申请招人；卡住了再找你</text>
+  </svg>
+  <p class="figure-caption">
+    图例：
+    <span style="background:#f5ecdb;padding:1px 8px;border-radius:3px;">你（董事会）</span>
+    <span style="background:#f5ebe6;padding:1px 8px;border-radius:3px;">CEO / 主流程</span>
+    <span style="background:#f1e6ec;padding:1px 8px;border-radius:3px;">下属 agent</span>
+    <span style="background:#ecf0e6;padding:1px 8px;border-radius:3px;">执行结果</span>
+  </p>
+</div>
+
+<p>所以你的「分派」更像：</p>
+
+<div class="note green"><strong>结论：</strong>把公司目标扔进去，让 CEO 去组织；不是直接点名某个工程师改某一个文件。当然你以后也可以手动建 issue、指定某人——但默认设计是「目标 → CEO 组织 → 你批关键节点」。</div>
+
+<h2>3 · 「战略」实际是啥</h2>
+
+<p>「战略」听起来很虚。在 Paperclip 里它很具体：CEO 读完 mission 后，交给你审批的一份<strong>公司级总计划</strong>（审批类型 <code>approve_ceo_strategy</code>，payload 里常见字段是 <code>plan</code> 文本）。</p>
+
+<p>界面上大致会看到：</p>
+<ul>
+  <li>对目标的理解</li>
+  <li>先做什么、后做什么</li>
+  <li>大块目标拆解</li>
+  <li>需要哪些角色 / 要不要招人</li>
+  <li>初始任务怎么铺开</li>
+</ul>
+
+<div class="callout">
+  <p><strong>例子。</strong>Mission：「做一个稳定抓热点并生成短视频脚本的工具。」</p>
+  <p>CEO 战略可能是：先打通「抓取 → 筛选 → 生成脚本」最小链路；先单源再多源；工程侧做采集与生成，第一周交付一条样例端到端。你批的是这个<strong>方向和拆法</strong>，不是某一行代码。</p>
+</div>
+
+<p>系统规则也很硬：<strong>战略没批过之前，CEO 通常不能正式把任务推到 <code>in_progress</code> 大规模开工。</strong> 战略 = 开工闸门。</p>
+
+<table>
+  <thead><tr><th>东西</th><th>层级</th><th>你在批什么</th></tr></thead>
+  <tbody>
+    <tr><td>CEO Strategy</td><td>公司级</td><td>整体方向、大拆法</td></tr>
+    <tr><td>Issue plan + <code>request_confirmation</code></td><td>任务级</td><td>这一张单怎么做</td></tr>
+  </tbody>
+</table>
+
+<h2>4 · Issue 与 Heartbeat：活怎么真正被干完</h2>
+
+<p>战略批完后，日常运转靠两样东西。</p>
+
+<h3>4.1 Issue：任务树上的工单</h3>
+
+<p>每张 issue 有标题、描述、优先级、负责人，以及状态机：</p>
+
+<pre><code>backlog → todo → in_progress → in_review → done
+                 └→ blocked</code></pre>
+
+<p>关键规则：谁要干，必须先 <code>checkout</code>（原子签出）。两个 agent 抢同一张单，只有一个能拿到；另一个收到冲突后应换别的活。任务可以有父子关系，一路追回公司目标。</p>
+
+<h3>4.2 Heartbeat：一次「上班」</h3>
+
+<p>Agent <strong>不是</strong> 7×24 常驻聊天窗口。Paperclip 在某些时刻把它叫醒，跑一小段，然后结束。这一小段叫 <strong>heartbeat</strong>。</p>
+
+<p>常见叫醒原因：定时、被分到新任务、被 @、你手动 Invoke、某个审批被你批完后回调。</p>
+
+<p>被叫醒后，大致协议是：</p>
+
+<div class="step">
+  <span class="who">agent</span><strong>读身份 → 看自己的单 → checkout → 干活 → 写评论/改状态 → 必要时拆子任务 → 结束</strong>
+  <p>下次再醒，尽量恢复会话上下文，不用从头自我介绍。</p>
+</div>
+
+<div class="note"><strong>一句话：</strong>Issue 是「做什么」；Heartbeat 是「什么时候来做、做一轮」。</div>
+
+<h2>5 · 两棵树：组织树 vs 任务树</h2>
+
+<p>很多人卡在这里。请把它们彻底拆开——<strong>创建者不同，装的东西不同。</strong></p>
+
+<table>
+  <thead><tr><th></th><th>组织树</th><th>任务树</th></tr></thead>
+  <tbody>
+    <tr><td>装什么</td><td>花名册 + 汇报线（<code>reportsTo</code>）</td><td>看板工单 + 父子任务（<code>parentId</code>）</td></tr>
+    <tr><td>主要创建者</td><td>你批准招人，或你直接建员工</td><td>CEO / manager 拆活时创建</td></tr>
+    <tr><td>改的是</td><td>公司有谁、谁管谁</td><td>这周具体干什么</td></tr>
+    <tr><td>关系</td><td>决定谁有权派给谁</td><td>决定活怎么层层拆开</td></tr>
+  </tbody>
+</table>
+
+<div class="diagram">
+  <div class="diagram-title">图 2 · 两棵树并行</div>
+  <svg viewBox="0 0 720 300" role="img" aria-label="组织树与任务树对照">
+    <!-- left: org -->
+    <text x="180" y="28" text-anchor="middle" font-size="12" font-family="JetBrains Mono, monospace" letter-spacing="0.06em" fill="#8b3a2f">ORGANIZATION</text>
+    <rect x="120" y="48" width="120" height="40" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="180" y="73" text-anchor="middle" font-size="13" font-weight="700" fill="#8b3a2f">CEO</text>
+    <line x1="180" y1="88" x2="180" y2="110" stroke="#8b3a2f" stroke-width="2"/>
+    <line x1="100" y1="110" x2="260" y2="110" stroke="#8b3a2f" stroke-width="2"/>
+    <line x1="100" y1="110" x2="100" y2="128" stroke="#8b3a2f" stroke-width="2"/>
+    <line x1="260" y1="110" x2="260" y2="128" stroke="#8b3a2f" stroke-width="2"/>
+    <rect x="40" y="128" width="120" height="40" rx="6" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="100" y="153" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3a5c">CTO</text>
+    <rect x="200" y="128" width="120" height="40" rx="6" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="260" y="153" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3a5c">CMO</text>
+    <line x1="100" y1="168" x2="100" y2="188" stroke="#8b3a2f" stroke-width="2"/>
+    <rect x="40" y="188" width="120" height="40" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="100" y="213" text-anchor="middle" font-size="12" font-weight="700" fill="#4a6f3a">后端工程师</text>
+    <text x="180" y="260" text-anchor="middle" font-size="12" fill="#6b6b6b">谁向谁汇报（你批 hire）</text>
+
+    <!-- right: tasks -->
+    <text x="540" y="28" text-anchor="middle" font-size="12" font-family="JetBrains Mono, monospace" letter-spacing="0.06em" fill="#2a6470">TASKS</text>
+    <rect x="430" y="48" width="220" height="40" rx="6" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="540" y="73" text-anchor="middle" font-size="12" font-weight="700" fill="#2a6470">ISSUE-1 打通抓取→脚本</text>
+    <line x1="540" y1="88" x2="540" y2="110" stroke="#2a6470" stroke-width="2"/>
+    <line x1="470" y1="110" x2="610" y2="110" stroke="#2a6470" stroke-width="2"/>
+    <line x1="470" y1="110" x2="470" y2="128" stroke="#2a6470" stroke-width="2"/>
+    <line x1="610" y1="110" x2="610" y2="128" stroke="#2a6470" stroke-width="2"/>
+    <rect x="400" y="128" width="140" height="40" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="470" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#4a6f3a">1a 单源抓取</text>
+    <rect x="540" y="128" width="140" height="40" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="610" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#4a6f3a">1b 脚本接口</text>
+    <text x="540" y="200" text-anchor="middle" font-size="12" fill="#6b6b6b">CEO→CTO，CTO 再拆给后端</text>
+    <text x="540" y="260" text-anchor="middle" font-size="12" fill="#6b6b6b">活怎么拆（agents 创建）</text>
+  </svg>
+  <p class="figure-caption">左：组织树（人）；右：任务树（活）。组织树先有人，任务树才有人可派。</p>
+</div>
+
+<h3>5.1 组织树：谁创建「员工」</h3>
+
+<ul>
+  <li><strong>你</strong>可以直接创建 agent、改 Reports to，也可以导入团队模板一次铺好整树。</li>
+  <li><strong>CEO / manager</strong>只能<strong>申请招人</strong>（<code>hire_agent</code>）；你批了，新人才进组织树。</li>
+  <li><strong>IC</strong>一般不招人，缺人找上级。</li>
+</ul>
+
+<p>约定用法：谁申请招人，新人的 <code>reportsTo</code> 通常就是申请人自己——也就是<strong>挂到自己直系下属</strong>。所以 CTO 可以招后端挂在 CTO 下；不是只有 CEO 能招。</p>
+
+<div class="note warn">
+  <strong>注意：</strong>CEO 一次 hire 不会自动长出整棵深树。默认是一层层招直系。想一次铺满整棵组织树，通常是你来建，或用公司/团队包导入。
+</div>
+
+<h3>5.2 任务树：谁创建「工单」</h3>
+
+<ul>
+  <li><strong>CEO</strong>按战略创建大任务，派给下属。</li>
+  <li><strong>manager（如 CTO）</strong>把自己那张大单再拆成子任务，派给 reports。</li>
+  <li><strong>IC</strong>多数自己干完；太大才再拆，或上报。</li>
+  <li><strong>你</strong>随时可以手动建 issue、改指派。</li>
+</ul>
+
+<p>创建子任务时通常要带 <code>parentId</code>（挂父任务）和 <code>goalId</code>（连回公司目标）。父任务不会因为拆了就立刻 done——常见是子任务推进，完成后再叫醒父任务负责人巡检。若子任务之间有先后，还要另加依赖边——见下一节。</p>
+
+<div class="note green"><strong>一句话：</strong>组织树你说了算；任务树是员工拆活时长出来的。</div>
+
+<h2>6 · 任务依赖：DAG，不是只有父子</h2>
+
+<p>父子任务回答的是「这是哪张大单下的子活」。还有另一层更关键的关系：<strong>谁必须先做完，谁才能开始</strong>。</p>
+
+<p>Paperclip 用一等公民依赖边表达这件事。数据在 <code>issue_relations</code>，类型是 <code>blocks</code>；API 字段是 <code>blockedByIssueIds</code>：</p>
+
+<pre><code>{
+  "title": "写压测",
+  "status": "blocked",
+  "blockedByIssueIds": ["&lt;缓存层那个 issue 的 id&gt;"]
+}</code></pre>
+
+<p>语义就是：<strong>A 挡住 B / B 依赖 A</strong> —— A 到 <code>done</code> 之前，B 不该继续推进。</p>
+
+<div class="diagram">
+  <div class="diagram-title">图 3 · 父子树 ≠ 依赖 DAG</div>
+  <svg viewBox="0 0 720 220" role="img" aria-label="父子与依赖对照">
+    <text x="180" y="28" text-anchor="middle" font-size="12" font-family="JetBrains Mono, monospace" fill="#8b3a2f">PARENT / CHILD</text>
+    <rect x="100" y="48" width="160" height="40" rx="6" fill="#e6eef0" stroke="#9ab8be"/>
+    <text x="180" y="73" text-anchor="middle" font-size="12" font-weight="700" fill="#2a6470">ISSUE-1 打通链路</text>
+    <line x1="180" y1="88" x2="180" y2="110" stroke="#2a6470" stroke-width="2"/>
+    <line x1="110" y1="110" x2="250" y2="110" stroke="#2a6470" stroke-width="2"/>
+    <line x1="110" y1="110" x2="110" y2="128" stroke="#2a6470" stroke-width="2"/>
+    <line x1="250" y1="110" x2="250" y2="128" stroke="#2a6470" stroke-width="2"/>
+    <rect x="50" y="128" width="120" height="40" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="110" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#4a6f3a">1a 抓取</text>
+    <rect x="190" y="128" width="120" height="40" rx="6" fill="#ecf0e6" stroke="#a8c0a0"/>
+    <text x="250" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#4a6f3a">1b 脚本</text>
+    <text x="180" y="200" text-anchor="middle" font-size="12" fill="#6b6b6b">只说明归属，不强制先后</text>
+
+    <text x="540" y="28" text-anchor="middle" font-size="12" font-family="JetBrains Mono, monospace" fill="#8b3a2f">DEPENDENCY</text>
+    <rect x="430" y="68" width="100" height="40" rx="6" fill="#f5ebe6" stroke="#c9a89e"/>
+    <text x="480" y="93" text-anchor="middle" font-size="12" font-weight="700" fill="#8b3a2f">1a 抓取</text>
+    <line x1="530" y1="88" x2="580" y2="88" stroke="#8b3a2f" stroke-width="2"/>
+    <polygon points="580,84 592,88 580,92" fill="#8b3a2f"/>
+    <text x="555" y="78" text-anchor="middle" font-size="10" fill="#8b3a2f">blocks</text>
+    <rect x="592" y="68" width="100" height="40" rx="6" fill="#f1e6ec" stroke="#b88aa0"/>
+    <text x="642" y="93" text-anchor="middle" font-size="12" font-weight="700" fill="#7a3a5c">1b 脚本</text>
+    <text x="540" y="140" text-anchor="middle" font-size="12" fill="#6b6b6b">1b 等 1a done 才被唤醒</text>
+    <text x="540" y="200" text-anchor="middle" font-size="12" fill="#6b6b6b">blockedByIssueIds 显式声明</text>
+  </svg>
+  <p class="figure-caption">CEO 拆出 1a / 1b 只是父子；若「脚本必须等抓取」，还要显式加 <code>blocks</code> 边。</p>
+</div>
+
+<table>
+  <thead><tr><th></th><th><code>parentId</code>（任务树）</th><th><code>blockedByIssueIds</code>（依赖边）</th></tr></thead>
+  <tbody>
+    <tr><td>含义</td><td>这是哪张大单的子活</td><td>必须先做完谁</td></tr>
+    <tr><td>是否自动挡开工</td><td><strong>否</strong></td><td><strong>是</strong>（常配 <code>status: blocked</code>）</td></tr>
+    <tr><td>完成后</td><td>方便汇总 / 巡检</td><td>所有 blocker 到 <code>done</code> 后，可自动叫醒被挡任务的负责人</td></tr>
+  </tbody>
+</table>
+
+<p>系统还会：禁止自己挡自己、检测环（防成环）。所以产品名未必印着「DAG」，机制就是<strong>有向无环的任务依赖图</strong>。官方也提醒：只在评论里写「blocked by X」没有自动唤醒；要用一等公民的 <code>blockedByIssueIds</code>。</p>
+
+<div class="note green"><strong>一句话：</strong>父子管归属；DAG 管先后。CEO 分派时可以同时建多张单，并把有先后的后置任务标成被前置挡住。</div>
+
+<h2>7 · Review：做完了不等于直接 done</h2>
+
+<p>另一个关键闸门：执行者觉得做完了，是不是就能关单？</p>
+
+<p><strong>可以强制不能。</strong> 每张 issue 可挂可选的 <code>executionPolicy</code>。运行时在执行者想标 <code>done</code> 时拦截，把单推进 review / approval 链，而不是靠 agent「记得交给 QA」。</p>
+
+<table>
+  <thead><tr><th>层</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td>Comment required</td><td>每次 agent 跑完必须留评论（运行时基线）</td></tr>
+    <tr><td>Review stage</td><td>审质量 / 对不对，可要求修改</td></tr>
+    <tr><td>Approval stage</td><td>经理 / 干系人最终签字</td></tr>
+  </tbody>
+</table>
+
+<div class="step">
+  <span class="who">Coder</span><strong>干完，想标 done</strong>
+  <p>若 issue 挂了 review→approval：runtime 改成 <code>in_review</code>，转派给 QA。</p>
+</div>
+<div class="step sub">
+  <span class="who sub">QA</span><strong>审查</strong>
+  <p>通过 → 可能继续转给 CTO 审批；要求修改 → 退回 <code>in_progress</code> 给原执行者，改完再交回同一 review 阶段。</p>
+</div>
+<div class="step bash">
+  <span class="who bash">通过</span><strong>才真正 done</strong>
+  <p>每次决定留审计（通过 / 要求修改 + 必填说明）。</p>
+</div>
+
+<h3>7.1 谁挂 policy？谁来审？</h3>
+
+<p><strong>谁创建/更新这张 issue，谁就可以挂</strong>——常见是 CEO / manager 建单委派时一起带上；你也可以事后补挂。</p>
+
+<p>要派 QA 审，policy 的 <code>participants</code> 里需要可引用的身份：</p>
+<ul>
+  <li>公司里已有一个 QA（或任意审阅）agent 的 <code>agentId</code>；或</li>
+  <li>直接指定你这个 board user</li>
+</ul>
+
+<div class="note warn">
+  <strong>顺序：</strong>先在组织里建好 / 招好 QA（或决定由你/CTO 审），再建单时把他们写进 <code>executionPolicy</code>。没有可引用的人，就没法正经指定「谁来审」。角色名不必字面叫 <code>qa</code>，但人必须先存在。
+</div>
+
+<p>没挂 policy 时，执行者理论上可以直接 <code>done</code>；仍可用手动 <code>in_review</code>、<code>request_confirmation</code>、把单交还给你等方式验收，但<strong>没有强制 QA 闸门</strong>。官方也强调：自己挂着写一句「please review」不算合法 review 路径。</p>
+
+<table>
+  <thead><tr><th></th><th>Issue Review（execution policy）</th><th>Approvals（战略 / 招人）</th></tr></thead>
+  <tbody>
+    <tr><td>审什么</td><td>这张任务的成果</td><td>公司级治理决策</td></tr>
+    <tr><td>谁审</td><td>QA / 上级 / 你</td><td>主要是你</td></tr>
+    <tr><td>触发</td><td>执行者想关单时被 runtime 拦截</td><td>agent 主动提交审批</td></tr>
+  </tbody>
+</table>
+
+<div class="note green"><strong>一句话：</strong>依赖 DAG 管「能不能开干」；execution policy 管「做完了算不算过关」。</div>
+
+<h2>8 · 谁可以让你批东西</h2>
+
+<p>不全是 CEO。</p>
+
+<table>
+  <thead><tr><th>类型</th><th>谁提</th><th>做什么</th></tr></thead>
+  <tbody>
+    <tr><td><code>approve_ceo_strategy</code></td><td>只有 CEO</td><td>公司战略方向</td></tr>
+    <tr><td><code>hire_agent</code></td><td>CEO 或 manager</td><td>招下属（可配置是否必须你批）</td></tr>
+    <tr><td><code>request_confirmation</code></td><td>相关 agent</td><td>某张 issue 上的轻量确认（不是正式 Approvals）</td></tr>
+  </tbody>
+</table>
+
+<p>你也可以绕过 hire 流程，自己直接建 agent。</p>
+
+<h2>9 · <code>request_confirmation</code> 是什么</h2>
+
+<p>它是<strong>贴在某张 issue 讨论串里的确认卡片</strong>：agent 问你「行不行 / 接不接受」，你点 Accept / Decline。</p>
+
+<table>
+  <thead><tr><th></th><th><code>request_confirmation</code></th><th>正式 Approvals</th></tr></thead>
+  <tbody>
+    <tr><td>挂在哪</td><td>某一张 issue 的线程里</td><td>公司 Inbox / Approvals</td></tr>
+    <tr><td>管什么</td><td>这单怎么做、要不要继续</td><td>招人、战略等治理大事</td></tr>
+    <tr><td>正式程度</td><td>轻量、任务内决策</td><td>正式董事会记录</td></tr>
+  </tbody>
+</table>
+
+<p>最常见场景：manager 先写 issue 的 <code>plan</code> 文档 → 发确认卡 → issue 进入 <code>in_review</code> → <strong>你接受后</strong>才创建实现子任务。</p>
+
+<div class="note warn"><strong>不会每个 IC、每张单都问你。</strong>任务清楚就直接干；确认卡是例外闸门，不是默认工序。CEO / manager 写 plan、做取舍时更常发；IC 多数闷头执行。</div>
+
+<h2>10 · 什么时候问你，什么时候问上级</h2>
+
+<p>这里没有编译器级硬路由，主要靠角色指令（<code>AGENTS.md</code> 等）约定判断。</p>
+
+<div class="tree">问题是什么？
+├─ 方向 / 预算 / 招人 / 破坏性操作 / 只有人能定
+│    → 问你（确认卡或 Approvals）
+├─ 执行卡住、缺协调、该谁做不清楚
+│    → 问上级（escalate / 转派）
+└─ 自己职责内能解决
+     → 不问，直接干
+</div>
+
+<p>再短一点：</p>
+<ul>
+  <li><strong>「要不要做 / 做成什么样」</strong> → 更常问你</li>
+  <li><strong>「做不下去了，组织上怎么协调」</strong> → 更常问上级</li>
+</ul>
+
+<p>CEO 尤其特殊：他上面没有 manager，卡住了最终常会 escalate to the board。CTO 类指令则常写：工程阻塞自己扛，只有跨团队或战略问题才往上抛。</p>
+
+<div class="note"><strong>现实别理想化：</strong>这是 prompt 约定，不是强制状态机。agent 偶尔会问错人。你可以用评论纠正，或改它的指令文件。</div>
+
+<h2>11 · 你日常真正要盯的三件事</h2>
+
+<div class="step user">
+  <span class="who user">董事会</span><strong>1. 审批 / 确认</strong>
+  <p>战略、招人、issue 上的 plan 确认。感觉公司停了，先看 Inbox——最常见原因就是有东西在等你。</p>
+</div>
+<div class="step user">
+  <span class="who user">董事会</span><strong>2. 预算</strong>
+  <p>约 80% 软告警，100% 硬停并 pause。你管油箱，不必盯每一笔 token。</p>
+</div>
+<div class="step user">
+  <span class="who user">董事会</span><strong>3. 卡住时介入</strong>
+  <p>顺序查：未批审批 → issue 是否被依赖边挡住 / <code>blocked</code> → 是否卡在 <code>in_review</code> 等 QA → agent 是否 error/paused/预算满 → heartbeat 是否还在跑。然后批/拒、留言、换人、pause/resume，必要时自己建人建单。</p>
+</div>
+
+<p>你<strong>不需要</strong>：给每个工程师派每一张小单、盯每一次 heartbeat 细节、手动画完整任务树。</p>
+
+<div class="note green"><strong>工作节奏：</strong>设目标 → 批战略 → 需要时批招人（含 QA）→ 看看板与依赖/review 卡点 → 卡住按上面排查 → 预算报警时做决定。</div>
+
+<h2>12 · 从 Agent 视角看完整链路</h2>
+
+<p>前面是董事会视角。这一节换到<strong>时间线</strong>：从你建公司，到战略审批，再到拆单、招人、工程师干活、QA 过关——每一棒写清<strong>谁醒、读到什么 Prompt 原文、做什么、产出什么、如何触发下一棒</strong>。</p>
+
+<p>演示故事：公司 mission 是「做一个可玩的网页小游戏」。文中角色指令取自仓库默认模板（<code>core-exec-team</code> / <code>onboarding-assets</code>）；Wake 段按源码 <code>renderPaperclipWakePrompt</code> 的真实句式填写示意值。你本地实例若改过 mission，只是把人格文件里的公司上下文换成你的话，骨架不变。</p>
+
+<div class="callout">
+  <strong>读这一节前先记住三层文本</strong>
+  <ol>
+    <li><strong>角色指令</strong>（通常是 <code>AGENTS.md</code>）——人格稳定层</li>
+    <li><strong>执行模板</strong>（未自定义时即 <code>DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE</code>）——本轮考勤规则</li>
+    <li><strong>Wake Payload / Resume Delta</strong>——本轮为何醒、先盯哪张单</li>
+  </ol>
+  <p style="margin:8px 0 0">Skill（尤其是 <code>paperclip</code>）是另注入的操作手册，不是 Prompt 正文；API 靠 Bash/curl 去打。下面每一步会贴 Prompt 原文（右上角可切中英文；英文是喂给模型的原文，中文是阅读译文）；Skill 只在需要时点一句。</p>
+</div>
+
+<div class="diagram">
+  <div class="diagram-title">图 4 · 从建公司到 done 的接棒顺序</div>
+  <div class="tree">0 你：建公司
+1 你：创建 CEO（落盘 AGENTS.md）
+2 CEO 第 1 轮：读 mission → 提交 approve_ceo_strategy
+3 你：批战略  →  系统以 approval_approved 叫醒 CEO
+4 CEO 第 2 轮：拆单 / 派人 / 可 hire（可挂 blockedBy、executionPolicy）
+5 （可选）你：批招人  →  叫醒 CEO 或新人
+6 工程师多轮：issue_assigned → 干活 → disposition
+7 （若有 review policy）QA：通过 / 打回
+8 done；CEO 再醒则巡检</div>
+</div>
+
+<!-- ========== 0 ========== -->
+<h3>12.0 你：建公司</h3>
+
+<div class="step user">
+  <span class="who user">董事会</span><strong>无 Agent 醒来</strong>
+  <p>在 UI 里填公司名、prefix、mission。系统落盘公司记录与目标（goal），<strong>还没有任何 heartbeat</strong>。</p>
+  <p><strong>产出：</strong>一家空壳公司 + mission 文本。<br>
+  <strong>下一棒：</strong>你去创建 CEO（或导入团队模板）。</p>
+</div>
+
+<!-- ========== 1 ========== -->
+<h3>12.1 你：创建 CEO</h3>
+
+<div class="step user">
+  <span class="who user">董事会</span><strong>仍是你在操作</strong>
+  <p>选 adapter（如 Codex）、写/确认指令。Paperclip 会把角色文件写到该公司 agent 目录的 <code>instructions/AGENTS.md</code>。默认新 agent 的定时心跳往往是关的（<code>heartbeat.enabled: false</code>），但 <code>wakeOnDemand: true</code>——有事件才会醒。</p>
+</div>
+
+<p>若导入 <strong>core-exec-team</strong>，CEO 的角色指令原文如下（仓库路径：<code>packages/teams-catalog/.../core-exec-team/agents/ceo/AGENTS.md</code>；文首 YAML 是目录元数据，真正喂给模型的是正文）：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">You are the CEO. Your job is to lead the company, not to do individual contributor work. You own strategy, prioritization, and cross-functional coordination.
+
+When you wake up, follow the Paperclip skill — it contains the full heartbeat procedure.
+
+## Delegation
+
+You MUST delegate work rather than doing it yourself. When a task is assigned to you:
+
+1. Triage the task using the `issue-triage` skill.
+2. Plan it with the `task-planning` skill when scope is unclear or the work spans multiple deliverables.
+3. Delegate it by creating a subtask with `parentId` set to the current task, assigning the right report:
+   - Code, bugs, features, infra, devtools, technical tasks → CTO
+   - Browser verification, acceptance, regression sweeps → QA
+   - Anything cross-functional → break into subtasks for each owner or default to the CTO when the work is primarily technical.
+4. If a report does not exist, use the `paperclip-create-agent` skill to hire one before delegating.
+5. Never write code, implement features, or fix bugs yourself. Even small or quick tasks get delegated.
+6. Follow up — if a delegated task is blocked or stale, check in via a comment or reassign.
+
+## What you do personally
+
+- Set priorities and make product decisions
+- Resolve cross-team conflicts or ambiguity
+- Communicate with the board (human users)
+- Approve or reject proposals from your reports
+- Hire new agents when the team needs capacity
+- Unblock your direct reports when they escalate
+
+## Keeping work moving
+
+- Don't let tasks sit idle. If you delegate something, check that it is progressing.
+- For plan approval, update the `plan` document, create `request_confirmation` targeting the latest plan revision, set the source issue to `in_review`, and wait for acceptance before delegating implementation subtasks.
+- Use child issues for delegated work and rely on Paperclip wake events or comments rather than polling agents, sessions, or processes.
+- Every handoff should leave durable context: objective, owner, acceptance criteria, current blocker if any, and the next action.
+- Always update your task with a comment explaining what you did.
+
+## Safety
+
+- Never exfiltrate secrets or private data.
+- Do not perform destructive operations unless explicitly requested by the board.
+- Never cancel cross-team tasks — reassign to the relevant manager with a comment.</pre>
+<pre data-lang="zh">你是 CEO。你的工作是领导公司，而不是做个人贡献者（IC）的活。你负责战略、优先级和跨职能协调。
+
+醒来时，遵循 Paperclip skill——里面有完整的心跳（heartbeat）规程。
+
+## 委派（Delegation）
+
+你必须委派工作，而不是自己做。当任务分给你时：
+
+1. 用 `issue-triage` skill 做分流。
+2. 范围不清或跨多个交付物时，用 `task-planning` skill 做规划。
+3. 通过创建子任务委派：`parentId` 设为当前任务，并指定合适的下属：
+   - 代码、缺陷、功能、基础设施、开发工具、技术任务 → CTO
+   - 浏览器验证、验收、回归扫描 → QA
+   - 跨职能或不明确 → 拆成各负责人的子任务；若主要是技术工作，默认给 CTO
+4. 若对应下属还不存在，先用 `paperclip-create-agent` skill 招人，再委派。
+5. 不要自己写代码、实现功能或修 bug。即使看起来很小很快，也要委派。
+6. 跟进——若被委派的任务卡住或停滞，用评论催问或改派。
+
+## 你亲自做的事
+
+- 定优先级，做产品决策
+- 解决跨团队冲突或歧义
+- 与董事会（人类用户）沟通
+- 批准或驳回下属提案
+- 团队需要产能时招新 agent
+- 下属升级上来时帮他们解阻
+
+## 让工作持续推进
+
+- 别让任务闲置。委派之后要检查是否在推进。
+- 计划审批：先更新 `plan` 文档，再创建针对最新 plan 修订版的 `request_confirmation`，把源 issue 设为 `in_review`，等接受后再委派实现子任务。
+- 用子 issue 做委派，依赖 Paperclip 的 wake 事件或评论，而不是轮询 agent、session 或进程。
+- 每次交接都留下持久上下文：目标、负责人、验收标准、当前阻塞（如有）、下一步动作。
+- 始终用评论更新任务，说明你做了什么。
+
+## 安全
+
+- 永不外泄密钥或私有数据。
+- 除非董事会明确要求，不做破坏性操作。
+- 永不取消跨团队任务——带着评论改派给相关经理。</pre>
+</div>
+
+<p>单独建 CEO、走 onboarding 资产时，还会多一份更长的委派细则，并要求每轮读 <code>HEARTBEAT.md</code>。该 checklist 原文（<code>server/src/onboarding-assets/ceo/HEARTBEAT.md</code>）：</p>
+
+<div class="prompt-block">
+<pre data-lang="en"># HEARTBEAT.md -- CEO Heartbeat Checklist
+
+Run this checklist on every heartbeat. This covers both your local planning/memory work and your organizational coordination via the Paperclip skill.
+
+## 1. Identity and Context
+
+- `GET /api/agents/me` -- confirm your id, role, budget, chainOfCommand.
+- Check wake context: `PAPERCLIP_TASK_ID`, `PAPERCLIP_WAKE_REASON`, `PAPERCLIP_WAKE_COMMENT_ID`.
+
+## 2. Local Planning Check
+
+1. Read today's plan from `$AGENT_HOME/memory/YYYY-MM-DD.md` under "## Today's Plan".
+2. Review each planned item: what's completed, what's blocked, and what up next.
+3. For any blockers, resolve them yourself or escalate to the board.
+4. If you're ahead, start on the next highest priority.
+5. Record progress updates in the daily notes.
+
+## 3. Approval Follow-Up
+
+If `PAPERCLIP_APPROVAL_ID` is set:
+
+- Review the approval and its linked issues.
+- Close resolved issues or comment on what remains open.
+
+## 4. Get Assignments
+
+- `GET /api/companies/{companyId}/issues?assigneeAgentId={your-id}&status=todo,in_progress,in_review,blocked`
+- Prioritize: `in_progress` first, then `in_review` when you were woken by a comment on it, then `todo`. Skip `blocked` unless you can unblock it.
+- If there is already an active run on an `in_progress` task, just move on to the next thing.
+- If `PAPERCLIP_TASK_ID` is set and assigned to you, prioritize that task.
+
+## 5. Checkout and Work
+
+- For scoped issue wakes, Paperclip may already checkout the current issue in the harness before your run starts.
+- Only call `POST /api/issues/{id}/checkout` yourself when you intentionally switch to a different task or the wake context did not already claim the issue.
+- Never retry a 409 -- that task belongs to someone else.
+- Do the work. Update status and comment when done.
+
+Status quick guide:
+
+- `todo`: ready to execute, but not yet checked out.
+- `in_progress`: actively owned work. Agents should reach this by checkout, not by manually flipping status.
+- `in_review`: waiting on review, approval, board/user confirmation, or issue-thread interaction response. Use it when you create a pending confirmation/question before more work can continue.
+- `blocked`: cannot move until something specific changes. Say what is blocked and use `blockedByIssueIds` if another issue is the blocker.
+- `done`: finished.
+- `cancelled`: intentionally dropped.
+
+## 6. Delegation
+
+- Create subtasks with `POST /api/companies/{companyId}/issues`. Always set `parentId` and `goalId`. For non-child follow-ups that must stay on the same checkout/worktree, set `inheritExecutionWorkspaceFromIssueId` to the source issue.
+- When you know the needed work and owner, create those subtasks directly. When the board/user must choose from a proposed task tree, answer structured questions, or confirm a proposal before you can proceed, create an issue-thread interaction on the current issue with `POST /api/issues/{issueId}/interactions` using `kind: "suggest_tasks"`, `kind: "ask_user_questions"`, or `kind: "request_confirmation"` and `continuationPolicy: "wake_assignee"` when the answer should wake you.
+- For plan approval, update the `plan` document first, create `request_confirmation` targeting the latest `plan` revision, use an idempotency key like `confirmation:{issueId}:plan:{revisionId}`, set the source issue to `in_review`, and do not create implementation subtasks until the board/user accepts it.
+- `ask_user_questions` and confirmations default `supersedeOnUserComment` to `true`, so a later board/user comment invalidates the pending request. Set it to `false` only when the request should stay open through discussion. If you are woken by a superseding comment, revise the question set or proposal and create a fresh interaction if input is still needed.
+- Use `paperclip-create-agent` skill when hiring new agents.
+- Assign work to the right agent for the job.
+
+## 7. Fact Extraction
+
+1. Check for new conversations since last extraction.
+2. Extract durable facts to the relevant entity in `$AGENT_HOME/life/` (PARA).
+3. Update `$AGENT_HOME/memory/YYYY-MM-DD.md` with timeline entries.
+4. Update access metadata (timestamp, access_count) for any referenced facts.
+
+## 8. Exit
+
+- Comment on any in_progress work before exiting.
+- If no assignments and no valid mention-handoff, exit cleanly.
+
+---
+
+## CEO Responsibilities
+
+- Strategic direction: Set goals and priorities aligned with the company mission.
+- Hiring: Spin up new agents when capacity is needed.
+- Unblocking: Escalate or resolve blockers for reports.
+- Budget awareness: Above 80% spend, focus only on critical tasks.
+- Never look for unassigned work -- only work on what is assigned to you.
+- Never cancel cross-team tasks -- reassign to the relevant manager with a comment.
+
+## Rules
+
+- Always use the Paperclip skill for coordination.
+- Always include `X-Paperclip-Run-Id` header on mutating API calls.
+- Comment in concise markdown: status line + bullets + links.
+- Self-assign via checkout only when explicitly @-mentioned.</pre>
+<pre data-lang="zh"># HEARTBEAT.md -- CEO 心跳检查清单
+
+每次心跳都跑这份清单。覆盖本地规划/记忆工作，以及通过 Paperclip skill 做的组织协调。
+
+## 1. 身份与上下文
+
+- `GET /api/agents/me` —— 确认你的 id、角色、预算、汇报链（chainOfCommand）。
+- 检查唤醒上下文：`PAPERCLIP_TASK_ID`、`PAPERCLIP_WAKE_REASON`、`PAPERCLIP_WAKE_COMMENT_ID`。
+
+## 2. 本地规划检查
+
+1. 从 `$AGENT_HOME/memory/YYYY-MM-DD.md` 的 "## Today's Plan" 读取今日计划。
+2. 逐项回顾：完成了什么、卡在哪里、下一步是什么。
+3. 有阻塞就自己解，或升级给董事会。
+4. 若进度超前，开始下一最高优先级事项。
+5. 把进展记进每日笔记。
+
+## 3. 审批跟进
+
+若设置了 `PAPERCLIP_APPROVAL_ID`：
+
+- 查看该审批及其关联 issue。
+- 已解决的关掉；否则评论说明还剩什么。
+
+## 4. 获取任务
+
+- `GET /api/companies/{companyId}/issues?assigneeAgentId={your-id}&status=todo,in_progress,in_review,blocked`
+- 优先级：先 `in_progress`；若因评论被叫醒则看 `in_review`；再 `todo`。除非你能解阻，否则跳过 `blocked`。
+- 若某张 `in_progress` 已有活跃 run，换下一件。
+- 若 `PAPERCLIP_TASK_ID` 已设且分给你，优先那张。
+
+## 5. Checkout 并工作
+
+- 对 scoped issue wake，Paperclip 可能在 harness 里已替你 checkout。
+- 仅当你故意换任务，或 wake 尚未占单时，才自己调 `POST /api/issues/{id}/checkout`。
+- 永不重试 409——那单属于别人。
+- 干活。完成后更新状态并留评论。
+
+状态速查：
+
+- `todo`：可执行，尚未 checkout。
+- `in_progress`：正在被拥有的工作。应通过 checkout 进入，不要手改状态。
+- `in_review`：等评审、审批、董事会确认，或 issue 线程交互回复。在创建待确认/提问、更多工作尚不能继续时使用。
+- `blocked`：特定事情不变就走不动。说清卡什么；若另一张 issue 是阻塞，用 `blockedByIssueIds`。
+- `done`：完成。
+- `cancelled`：有意放弃。
+
+## 6. 委派
+
+- 用 `POST /api/companies/{companyId}/issues` 建子任务。始终设 `parentId` 与 `goalId`。非父子、但必须留在同一 checkout/worktree 的跟进，把 `inheritExecutionWorkspaceFromIssueId` 设为源 issue。
+- 已知工作与负责人时直接建子任务。若董事会需从提案任务树中选择、回答结构化问题、或先确认提案，则在当前 issue 上 `POST /api/issues/{issueId}/interactions`，`kind` 为 `suggest_tasks` / `ask_user_questions` / `request_confirmation`；需要回答后叫醒你时设 `continuationPolicy: "wake_assignee"`。
+- 计划审批：先更新 `plan` 文档，再创建针对最新 `plan` 修订的 `request_confirmation`，幂等键形如 `confirmation:{issueId}:plan:{revisionId}`，源 issue 设 `in_review`；董事会接受前不要建实现子任务。
+- `ask_user_questions` 与确认默认 `supersedeOnUserComment: true`，后续董事会评论会使待处理请求失效。仅当讨论期间仍需保持打开时设为 `false`。若被覆盖性评论叫醒，修订问题集或提案，仍需输入则新建交互。
+- 招人用 `paperclip-create-agent` skill。
+- 把工作分给合适的 agent。
+
+## 7. 事实抽取
+
+1. 检查自上次抽取以来的新对话。
+2. 把持久事实抽到 `$AGENT_HOME/life/`（PARA）中对应实体。
+3. 用时间线条目更新 `$AGENT_HOME/memory/YYYY-MM-DD.md`。
+4. 更新被引用事实的访问元数据（timestamp、access_count）。
+
+## 8. 退出
+
+- 退出前给任何 `in_progress` 工作留评论。
+- 若无任务且无有效 @提及交接，干净退出。
+
+---
+
+## CEO 职责
+
+- 战略方向：设定与公司使命对齐的目标与优先级。
+- 招聘：需要产能时拉起新 agent。
+- 解阻：为下属升级或解决阻塞。
+- 预算意识：花费超过 80% 时只做关键任务。
+- 永不寻找未分配工作——只做分给你的。
+- 永不取消跨团队任务——带着评论改派给相关经理。
+
+## 规则
+
+- 协调始终用 Paperclip skill。
+- 变更类 API 调用始终带 `X-Paperclip-Run-Id` 头。
+- 评论用简洁 markdown：状态行 + 要点 + 链接。
+- 仅在被明确 @提及时，才通过 checkout 自领任务。</pre>
+</div>
+
+<p><strong>产出：</strong>组织树上的 CEO 节点 + 指令文件。<br>
+<strong>下一棒：</strong>把目标/任务派给 CEO，或点 Invoke——系统第一次 heartbeat 叫醒 CEO。</p>
+
+<!-- ========== 2 ========== -->
+<h3>12.2 CEO 第 1 轮：读 mission → 交战略审批</h3>
+
+<div class="step">
+  <span class="who">CEO</span><strong>谁醒：CEO</strong>
+  <p>典型 wake reason：<code>issue_assigned</code>（使命相关任务落到 CEO）。这一轮他<strong>还不能</strong>把实现类任务大规模推进到 <code>in_progress</code>——Skill 要求先过战略闸门。</p>
+</div>
+
+<p>除了上面的 <code>AGENTS.md</code>，未自定义 <code>promptTemplate</code> 时还会叠上默认执行模板原文（<code>packages/adapter-utils/.../DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE</code>；占位符运行时替换成真实 id/name）：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.
+
+Execution contract:
+- Start actionable work in this heartbeat; do not stop at a plan unless the issue asks for planning.
+- Leave durable progress in comments, documents, or work products, then update the issue to a clear final disposition before ending the heartbeat.
+- Comments, documents, screenshots, work products, and `Remaining` bullets are evidence, not valid liveness paths by themselves.
+- Final disposition checklist: mark `done` when complete; use `in_review` only with a real reviewer, approval, interaction, or monitor path; use `blocked` only with first-class blockers or a named unblock owner/action; create delegated follow-up issues with blockers when another agent owns the next step; keep `in_progress` only when a live continuation path exists.
+- Prefer the smallest verification that proves the change; do not default to full workspace typecheck/build/test on every heartbeat unless the task scope warrants it.
+- Use child issues for parallel or long delegated work instead of polling agents, sessions, or processes.
+- If woken by a human comment on a dependency-blocked issue, respond or triage the comment without treating the blocked deliverable work as unblocked.
+- Create child issues directly when you know what needs to be done; use issue-thread interactions when the board/user must choose suggested tasks, answer structured questions, or confirm a proposal.
+- Use `PAPERCLIP_SCRATCH_DIR` / `PAPERCLIP_RUN_SCRATCH_DIR` for temporary scratch files instead of ad hoc `/tmp` paths; Paperclip removes that run-owned directory after the run ends.
+- To ask for that input, create an interaction on the current issue with POST /api/issues/{issueId}/interactions using kind suggest_tasks, ask_user_questions, or request_confirmation. Use continuationPolicy wake_assignee when you need to resume after a response; for request_confirmation this resumes only after acceptance.
+- When you intentionally restart follow-up work on a completed assigned issue, include structured `resume: true` with the POST /api/issues/{issueId}/comments or PATCH /api/issues/{issueId} comment payload. Generic agent comments on closed issues are inert by default.
+- For plan approval, update the plan document first, then create request_confirmation targeting the latest plan revision with idempotencyKey confirmation:{issueId}:plan:{revisionId}. Wait for acceptance before creating implementation subtasks, and create a fresh confirmation after superseding board/user comments if approval is still needed.
+- If blocked, mark the issue blocked and name the unblock owner and action.
+- Respect budget, pause/cancel, approval gates, and company boundaries.</pre>
+<pre data-lang="zh">你是 agent {{agent.id}}（{{agent.name}}）。继续你的 Paperclip 工作。
+
+执行契约（Execution contract）：
+- 本心跳内开始可执行工作；除非 issue 要求规划，否则不要停在计划上。
+- 在评论、文档或工作产物中留下持久进度，然后在心跳结束前把 issue 更新到清晰的最终 disposition。
+- 评论、文档、截图、工作产物和 `Remaining` 要点只是证据，本身不是有效的活性（liveness）路径。
+- 最终 disposition 清单：完成则标 `done`；仅当有真实评审者、审批、交互或监控路径时用 `in_review`；仅当有一等阻塞或点名解阻负责人/动作时用 `blocked`；下一步由其他 agent 负责时，建带阻塞关系的委派跟进 issue；仅当存在活的续跑路径时才保持 `in_progress`。
+- 优先用能证明改动的最小验证；除非任务范围需要，不要默认每个心跳都跑全量 typecheck/build/test。
+- 用子 issue 做并行或长委派，不要轮询 agent、session 或进程。
+- 若因人类评论在依赖阻塞的 issue 上被叫醒：回复或分流评论，但不要把被阻塞的交付工作当成已解阻。
+- 已知要做什么时直接建子 issue；董事会需选择建议任务、回答结构化问题或确认提案时，用 issue 线程交互。
+- 临时文件用 `PAPERCLIP_SCRATCH_DIR` / `PAPERCLIP_RUN_SCRATCH_DIR`，不要随意用 `/tmp`；run 结束后 Paperclip 会删掉该目录。
+- 需要输入时，在当前 issue 上 POST /api/issues/{issueId}/interactions，kind 为 suggest_tasks、ask_user_questions 或 request_confirmation。需要回复后继续时用 continuationPolicy wake_assignee；对 request_confirmation，仅在接受后才会续跑。
+- 有意在已完成的已分派 issue 上重启跟进时，在 POST /api/issues/{issueId}/comments 或 PATCH /api/issues/{issueId} 的评论载荷里带结构化 `resume: true`。默认情况下，agent 在已关闭 issue 上的普通评论不会触发动作。
+- 计划审批：先更新 plan 文档，再创建针对最新 plan 修订的 request_confirmation，幂等键 confirmation:{issueId}:plan:{revisionId}。接受前不要建实现子任务；若董事会评论覆盖了请求且仍需审批，再建一份新确认。
+- 若阻塞：把 issue 标为 blocked，并点名解阻负责人与动作。
+- 遵守预算、暂停/取消、审批闸门与公司边界。</pre>
+</div>
+
+<p>本轮 Wake 原文结构（源码固定句式 + 示意字段）：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">## Paperclip Wake Payload
+
+Treat this wake payload as the highest-priority change for the current heartbeat.
+This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.
+Use this inline wake data first before refetching the issue thread.
+
+Execution contract: take concrete action in this heartbeat when the issue is actionable; do not stop at a plan unless planning was requested. Leave durable progress and then give the issue a clear final disposition before ending the heartbeat: `done`, `in_review` with a real reviewer/approval/interaction path, `blocked` with first-class blockers or a named unblock owner/action, delegated follow-up issues with blockers, or `in_progress` only when a live continuation path exists. Immediately before returning, verify that Paperclip records one of those dispositions; a successful process exit or final response is not sufficient. If no valid disposition is recorded, record it now and do not end the run. Use child issues for long or parallel delegated work instead of polling. Comments, documents, screenshots, work products, and `Remaining` bullets are evidence, not valid liveness paths by themselves.
+
+- reason: issue_assigned
+- issue: ZIJ-1 制定小游戏交付战略
+- fallback fetch needed: no
+- issue status: todo
+- issue priority: high</pre>
+<pre data-lang="zh">## Paperclip Wake Payload
+
+把这份 wake payload 当作当前心跳的最高优先级变化。
+本心跳作用域限于下面这张 issue。处理完本次 wake 之前，不要切换到其他 issue。
+先用这里的内联 wake 数据，再去重新拉取 issue 线程。
+
+执行契约：当 issue 可执行时，本心跳内采取具体行动；除非被要求规划，否则不要停在计划上。留下持久进度，然后在心跳结束前给出清晰最终 disposition：`done`；带真实评审者/审批/交互路径的 `in_review`；带一等阻塞或点名解阻负责人/动作的 `blocked`；带阻塞关系的委派跟进 issue；或仅在存在活续跑路径时保持 `in_progress`。返回前立刻确认 Paperclip 已记录上述 disposition 之一；进程成功退出或最终回复本身不够。若尚未记录合法 disposition，现在就记，不要结束 run。长或并行委派用子 issue，不要轮询。评论、文档、截图、工作产物和 `Remaining` 要点只是证据，本身不是有效活性路径。
+
+- reason: issue_assigned
+- issue: ZIJ-1 制定小游戏交付战略
+- fallback fetch needed: no
+- issue status: todo
+- issue priority: high</pre>
+</div>
+
+<p><strong>CEO 这一轮实际动作（按 Skill）：</strong></p>
+<ol>
+  <li>Checkout 当前 issue，读 mission / goal。</li>
+  <li>写出战略计划（文档或评论）。</li>
+  <li>提交公司级审批：</li>
+</ol>
+
+<pre><code>POST /api/companies/{companyId}/approvals
+{
+  "type": "approve_ceo_strategy",
+  "requestedByAgentId": "{ceo-agent-id}",
+  "payload": { "plan": "……小游戏范围、技术栈、组织、七日节奏……" }
+}</code></pre>
+
+<p><strong>产出：</strong>一条 pending 的 <code>approve_ceo_strategy</code> 审批；CEO 本轮以合法 disposition 结束（常见是等董事会，issue 可能停在可等待状态）。<br>
+<strong>下一棒：</strong>你在 Approvals 里批或驳。默认<strong>不会</strong>因为「战略还没批」就按 interval 自动再醒 CEO。</p>
+
+<!-- ========== 3 ========== -->
+<h3>12.3 你：批战略</h3>
+
+<div class="step user">
+  <span class="who user">董事会</span><strong>闸门操作</strong>
+  <p>在 UI 批准战略。服务端解析审批后，用 wake reason <code>approval_approved</code> 再叫醒 CEO（并可能带上 <code>PAPERCLIP_APPROVAL_ID</code>）。</p>
+  <p><strong>产出：</strong>战略闸门打开。<br>
+  <strong>下一棒：</strong>CEO 第 2 轮 heartbeat。</p>
+</div>
+
+<!-- ========== 4 ========== -->
+<h3>12.4 CEO 第 2 轮：拆单 / 派人 / 可 hire</h3>
+
+<div class="step">
+  <span class="who">CEO</span><strong>谁醒：还是 CEO</strong>
+  <p>角色指令同上（不再重复粘贴）。本轮 Wake 示意：</p>
+</div>
+
+<div class="prompt-block">
+<pre data-lang="en">## Paperclip Wake Payload
+
+Treat this wake payload as the highest-priority change for the current heartbeat.
+This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.
+Use this inline wake data first before refetching the issue thread.
+
+- reason: approval_approved
+- issue: ZIJ-1 制定小游戏交付战略
+- fallback fetch needed: no
+- issue status: in_progress
+- issue priority: high</pre>
+<pre data-lang="zh">## Paperclip Wake Payload
+
+把这份 wake payload 当作当前心跳的最高优先级变化。
+本心跳作用域限于下面这张 issue。处理完本次 wake 之前，不要切换到其他 issue。
+先用这里的内联 wake 数据，再去重新拉取 issue 线程。
+
+- reason: approval_approved
+- issue: ZIJ-1 制定小游戏交付战略
+- fallback fetch needed: no
+- issue status: in_progress
+- issue priority: high</pre>
+</div>
+
+<p><strong>动作：</strong>按委派规则拆子任务（<code>parentId</code> + <code>goalId</code> + <code>assigneeAgentId</code>）。技术实现派给 CTO；需要验收可派 QA。若还没有下属，走 hire（<code>paperclip-create-agent</code>）。建单时还可以：</p>
+<ul>
+  <li><code>blockedByIssueIds</code>：依赖 DAG（例如「写玩法」block「做关卡」）</li>
+  <li><code>executionPolicy</code>：做完必须进 QA / 人工 review，而不是直接 <code>done</code></li>
+</ul>
+
+<p><strong>产出示例：</strong></p>
+<div class="tree">ZIJ-1 战略（CEO）
+ ├─ ZIJ-2 实现 Canvas 小游戏核心循环 → CTO
+ │    executionPolicy: review by QA
+ └─ ZIJ-3 浏览器验收可玩性 → QA
+      blockedBy: [ZIJ-2]</div>
+
+<p><strong>下一棒：</strong>子任务 <code>assigneeAgentId</code> 变更 → 系统 <code>issue_assigned</code> 叫醒对应 agent。若 hire 需你批，先进入 12.5。</p>
+
+<!-- ========== 5 ========== -->
+<h3>12.5 （可选）你：批招人</h3>
+
+<div class="step user">
+  <span class="who user">董事会</span><strong>hire 审批</strong>
+  <p>CEO 发起招人审批后，你在 Approvals 批准。新 agent 落盘自己的 <code>AGENTS.md</code>，并可能被立即分到单。</p>
+  <p><strong>下一棒：</strong>新人因 <code>issue_assigned</code> 醒来，或 CEO 因 <code>approval_approved</code> 醒来继续委派。</p>
+</div>
+
+<p>若招的是 CTO，其角色指令原文（<code>.../core-exec-team/agents/cto/AGENTS.md</code>）：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">You are the CTO. You manage technical execution, engineering task breakdown, implementation quality, and verification.
+
+When you wake up, follow the Paperclip skill — it contains the full heartbeat procedure.
+
+## Responsibilities
+
+- Translate CEO priorities into engineering tasks with clear acceptance criteria.
+- Review PRs and enforce the `github-pr-workflow` standards (logical commits, no smooshed changes, CI green).
+- Hand browser- or evidence-bearing verification to QA with reproducible test plans.
+- Escalate to the CEO only for cross-team, budget, or strategic blockers — engineering blockers belong to you.
+
+## Working rules
+
+- Start actionable work in the same heartbeat. Do not stop at a plan unless the task asks for one.
+- Use child issues for parallel or long delegated work. Do not poll.
+- Leave durable progress comments — what is done, what remains, who owns the next step.
+- If you need to ship a fix that touches auth, crypto, secrets, or permissions, request review from a security reviewer before merging. Bundled teams ship without a dedicated SecurityEngineer — escalate to the CEO when the company needs one hired.
+
+## Safety
+
+- Never commit secrets or customer data.
+- Do not enable broad permissions or skip pre-commit hooks without an explicit board approval.</pre>
+<pre data-lang="zh">你是 CTO。你负责技术执行、工程任务拆解、实现质量与验证。
+
+醒来时，遵循 Paperclip skill——里面有完整的心跳规程。
+
+## 职责
+
+- 把 CEO 的优先级翻译成带清晰验收标准的工程任务。
+- 评审 PR，并执行 `github-pr-workflow` 标准（逻辑清晰的 commit、不把无关改动揉在一起、CI 绿灯）。
+- 把需要浏览器或证据的验证交给 QA，并附可复现的测试计划。
+- 仅在跨团队、预算或战略阻塞时升级给 CEO——工程阻塞归你。
+
+## 工作规则
+
+- 同一心跳内开始可执行工作。除非任务要求规划，否则不要停在计划上。
+- 并行或长委派用子 issue。不要轮询。
+- 留下持久进度评论——做了什么、还剩什么、下一步谁负责。
+- 若修复触及认证、加密、密钥或权限，合并前请安全评审者审。捆绑团队默认没有专职 SecurityEngineer——公司需要时升级给 CEO 去招。
+
+## 安全
+
+- 永不提交密钥或客户数据。
+- 未经董事会明确批准，不要放开宽权限或跳过 pre-commit hook。</pre>
+</div>
+
+<p>若招的是 QA，原文（<code>.../core-exec-team/agents/qa/AGENTS.md</code>）：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">You are the QA Engineer. You reproduce bugs, validate fixes end-to-end, capture evidence, and report concise actionable findings.
+
+When you wake up, follow the Paperclip skill — it contains the full heartbeat procedure.
+
+## Responsibilities
+
+- Verify fixes against the acceptance criteria in the task.
+- Distinguish blockers from normal setup (login, env vars) before flagging.
+- Capture screenshots or recorded steps for any UI-visible change.
+- Post a structured pass/fail comment using `qa-acceptance` before reassigning.
+- Send failures back to the implementer with concrete repro steps. Escalate to the CTO only when ownership is unclear.
+
+## Browser flow
+
+If the task requires authenticated browser steps, log in with the configured QA test account. Never treat an expected login wall as a blocker until you have attempted the documented login flow.
+
+## Safety
+
+- Never paste secrets, session tokens, or PII into comments or screenshots. Redact before attaching.
+- Use only QA test credentials provided to you. Never attempt admin or real-user credentials.
+- Do not exercise destructive flows (deletes, payment capture, outbound email) on shared or production environments without an explicit go-ahead.</pre>
+<pre data-lang="zh">你是 QA 工程师。你复现缺陷、端到端验证修复、采集证据，并报告简洁可执行的发现。
+
+醒来时，遵循 Paperclip skill——里面有完整的心跳规程。
+
+## 职责
+
+- 对照任务里的验收标准验证修复。
+- 标记阻塞前，先区分真阻塞与正常准备（登录、环境变量）。
+- 对任何 UI 可见改动，截图或记录步骤。
+- 改派前用 `qa-acceptance` 发结构化 pass/fail 评论。
+- 失败打回实现者，并附具体复现步骤。仅在归属不清时升级给 CTO。
+
+## 浏览器流程
+
+若任务需要已登录的浏览器步骤，用配置好的 QA 测试账号登录。在尝试过文档化的登录流程之前，不要把预期的登录墙当成阻塞。
+
+## 安全
+
+- 永不把密钥、session token 或 PII 贴进评论或截图。附加前先打码。
+- 只用提供给你的 QA 测试凭证。永不尝试管理员或真实用户凭证。
+- 未经明确批准，不要在共享或生产环境做破坏性流程（删除、扣款、外发邮件）。</pre>
+</div>
+
+<p>若只是普通 IC、未用团队模板，默认角色指令原文（<code>server/src/onboarding-assets/default/AGENTS.md</code>）：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">You are an agent at Paperclip company.
+
+## Execution Contract
+
+- Start actionable work in the same heartbeat. Do not stop at a plan unless the issue explicitly asks for planning.
+- Keep the work moving until it is done. If you need QA to review it, ask them. If you need your boss to review it, ask them.
+- Leave durable progress in task comments, documents, or work products, then update the issue to a clear final disposition before you exit.
+- When your work produces a user-inspectable deliverable file, follow the Paperclip skill's "Generated Artifacts and Work Products" workflow before final disposition. Use `skills/paperclip/scripts/paperclip-upload-artifact.sh` when working in this repo, create/update an artifact work product when the file is the deliverable, and link the uploaded attachment in the final comment. Do not rely on local filesystem paths as the only access path. If an important file intentionally remains workspace-only, create/update a work product with `metadata.resourceRef.kind: "workspace_file"` and a workspace-relative path, then name that work product and path in the final comment. Treat browse/search as a fallback for recovering workspace files, not the preferred deliverable path.
+- When your work produces or updates an operator-facing engineering output, create/update the matching work product: `pull_request` for opened PRs, `preview_url` for published previews, `runtime_service` for managed preview/dev services, `commit` for notable pushed commits, and `branch` when the branch itself is the handoff. A comment is not a substitute for the work product access path.
+- Comments, documents, screenshots, work products, and `Remaining` bullets are evidence, not valid liveness paths by themselves.
+- Final disposition checklist: mark `done` when complete and verified; use `in_review` only with a real reviewer, approval, interaction, or monitor path; use `blocked` only with first-class blockers or a named unblock owner/action; create delegated follow-up issues with blockers when another agent owns the next step; keep `in_progress` only when a live continuation path exists.
+- Use child issues for parallel or long delegated work instead of polling agents, sessions, or processes.
+- Create child issues directly when you know what needs to be done. If the board/user needs to choose suggested tasks, answer structured questions, or confirm a proposal first, create an issue-thread interaction on the current issue with `POST /api/issues/{issueId}/interactions` using `kind: "suggest_tasks"`, `kind: "ask_user_questions"`, or `kind: "request_confirmation"`.
+- Use `request_confirmation` instead of asking for yes/no decisions in markdown. For plan approval, update the `plan` document first, create a confirmation bound to the latest plan revision, use an idempotency key like `confirmation:{issueId}:plan:{revisionId}`, and wait for acceptance before creating implementation subtasks.
+- `ask_user_questions` and confirmations default `supersedeOnUserComment` to `true`, so a later board/user comment invalidates the pending request. Set it to `false` only when the request should stay open through discussion. If you wake up from a superseding comment, revise the artifact, question set, or proposal and create a fresh interaction if input is still needed.
+- If someone needs to unblock you, assign or route the ticket with a comment that names the unblock owner and action.
+- Respect budget, pause/cancel, approval gates, and company boundaries.
+
+Do not let work sit here. You must always update your task with a comment.</pre>
+<pre data-lang="zh">你是 Paperclip 公司的一名 agent。
+
+## 执行契约（Execution Contract）
+
+- 同一心跳内开始可执行工作。除非 issue 明确要求规划，否则不要停在计划上。
+- 推动工作直到完成。需要 QA 审就找 QA；需要上司审就找上司。
+- 在任务评论、文档或工作产物中留下持久进度，然后在退出前把 issue 更新到清晰的最终 disposition。
+- 若产出用户可检查的交付文件，最终 disposition 前遵循 Paperclip skill 的「Generated Artifacts and Work Products」流程。在本仓库工作时用 `skills/paperclip/scripts/paperclip-upload-artifact.sh`；文件即交付物时创建/更新 artifact 工作产物，并在最终评论里链到上传附件。不要只依赖本地文件系统路径。若重要文件有意只留在工作区，创建/更新 `metadata.resourceRef.kind: "workspace_file"` 且带工作区相对路径的工作产物，并在最终评论点名该产物与路径。浏览/搜索只是找回工作区文件的后备，不是首选交付路径。
+- 若产出或更新面向操作者的工程输出，创建/更新对应工作产物：开 PR 用 `pull_request`，发布预览用 `preview_url`，托管预览/开发服务用 `runtime_service`，重要推送 commit 用 `commit`，分支本身即交接时用 `branch`。评论不能代替工作产物访问路径。
+- 评论、文档、截图、工作产物和 `Remaining` 要点只是证据，本身不是有效活性路径。
+- 最终 disposition 清单：完成并验证后标 `done`；仅当有真实评审者、审批、交互或监控路径时用 `in_review`；仅当有一等阻塞或点名解阻负责人/动作时用 `blocked`；下一步由其他 agent 负责时建带阻塞的委派跟进；仅当存在活续跑路径时保持 `in_progress`。
+- 并行或长委派用子 issue，不要轮询。
+- 已知要做什么时直接建子 issue。若董事会需先选择建议任务、回答结构化问题或确认提案，在当前 issue 上 `POST /api/issues/{issueId}/interactions`，`kind` 为 `suggest_tasks` / `ask_user_questions` / `request_confirmation`。
+- 用 `request_confirmation`，不要在 markdown 里问 yes/no。计划审批：先更新 `plan` 文档，再创建绑定最新 plan 修订的确认，幂等键形如 `confirmation:{issueId}:plan:{revisionId}`，接受前不要建实现子任务。
+- `ask_user_questions` 与确认默认 `supersedeOnUserComment: true`，后续董事会评论会使待处理请求失效。仅当讨论期间仍需保持打开时设为 `false`。若被覆盖性评论叫醒，修订产物/问题集/提案，仍需输入则新建交互。
+- 若需要别人解阻你：改派或路由工单，评论里点名解阻负责人与动作。
+- 遵守预算、暂停/取消、审批闸门与公司边界。
+
+不要让工作停在这里。你必须始终用评论更新任务。</pre>
+</div>
+
+<!-- ========== 6 ========== -->
+<h3>12.6 工程师多轮：assigned → 干活 → disposition</h3>
+
+<div class="step">
+  <span class="who">CTO / IC</span><strong>谁醒：被分到 ZIJ-2 的工程师</strong>
+</div>
+
+<p>第 1 次被分到单时的 Wake 示意：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">## Paperclip Wake Payload
+
+Treat this wake payload as the highest-priority change for the current heartbeat.
+This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.
+Use this inline wake data first before refetching the issue thread.
+
+- reason: issue_assigned
+- issue: ZIJ-2 实现 Canvas 小游戏核心循环
+- fallback fetch needed: no
+- issue status: todo
+- issue priority: high</pre>
+<pre data-lang="zh">## Paperclip Wake Payload
+
+把这份 wake payload 当作当前心跳的最高优先级变化。
+本心跳作用域限于下面这张 issue。处理完本次 wake 之前，不要切换到其他 issue。
+先用这里的内联 wake 数据，再去重新拉取 issue 线程。
+
+- reason: issue_assigned
+- issue: ZIJ-2 实现 Canvas 小游戏核心循环
+- fallback fetch needed: no
+- issue status: todo
+- issue priority: high</pre>
+</div>
+
+<p><strong>动作：</strong>按 Skill 走 scoped-wake 快路径——别先扫整个 inbox；checkout → 读上下文 → 用编码 Tool 写代码 → 评论留进度 → 更新 disposition。</p>
+
+<p><strong>单次心跳完成标志</strong>不是「小游戏全部做完」，而是：留下持久进度 + 合法 disposition（<code>done</code> / <code>in_review</code> / <code>blocked</code> / 有活续路径的 <code>in_progress</code>）。1 页还是 10 页，由模型自切；心跳只是短跑窗口。</p>
+
+<div class="note warn"><strong>默认容易停死：</strong>若 <code>heartbeat.enabled: false</code> 且没有新的事件（评论、再分派、依赖解除、你手动 Invoke），工程师<strong>干完这一轮就睡</strong>。长活任务请开定时器，或靠上级催 / 拆子任务互唤醒 / 你点 Invoke。</div>
+
+<p>若同一任务、同一 cwd、且 adapter 有可恢复的 session，下一轮可能不再贴整本说明，只塞更短的 Resume Delta 原文结构：</p>
+
+<div class="prompt-block">
+<pre data-lang="en">## Paperclip Resume Delta
+
+You are resuming an existing Paperclip session.
+This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.
+Focus on the new wake delta below and continue the current task without restating the full heartbeat boilerplate.
+Fetch the API thread only when `fallbackFetchNeeded` is true or you need broader history than this batch.
+
+- reason: issue_commented
+- issue: ZIJ-2 实现 Canvas 小游戏核心循环
+- pending comments: 1/1
+- latest comment id: …
+- fallback fetch needed: no
+- issue status: in_progress</pre>
+<pre data-lang="zh">## Paperclip Resume Delta
+
+你正在恢复一个已有的 Paperclip session。
+本心跳作用域限于下面这张 issue。处理完本次 wake 之前，不要切换到其他 issue。
+聚焦下面的新 wake 增量，继续当前任务，不要重述完整心跳套话。
+仅当 `fallbackFetchNeeded` 为 true，或你需要比本批更广的历史时，才去拉 API 线程。
+
+- reason: issue_commented
+- issue: ZIJ-2 实现 Canvas 小游戏核心循环
+- pending comments: 1/1
+- latest comment id: …
+- fallback fetch needed: no
+- issue status: in_progress</pre>
+</div>
+
+<p><strong>产出：</strong>可运行的游戏代码 / artifact；issue 进入 <code>done</code> 或（若挂了 policy）被系统改到 <code>in_review</code> 并转给 QA。<br>
+<strong>下一棒：</strong>QA 被分到 review，或依赖解除后叫醒被 block 的下游单。</p>
+
+<!-- ========== 7 ========== -->
+<h3>12.7 QA（若有 executionPolicy）</h3>
+
+<div class="step">
+  <span class="who">QA</span><strong>谁醒：QA</strong>
+  <p>角色指令见 12.5 已贴的 QA <code>AGENTS.md</code>。Wake 常见 reason：进入 review 阶段后的分派 / 评论唤醒。</p>
+</div>
+
+<div class="prompt-block">
+<pre data-lang="en">## Paperclip Wake Payload
+
+Treat this wake payload as the highest-priority change for the current heartbeat.
+This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.
+Use this inline wake data first before refetching the issue thread.
+
+- reason: issue_assigned
+- issue: ZIJ-2 实现 Canvas 小游戏核心循环
+- fallback fetch needed: no
+- issue status: in_review
+- issue priority: high</pre>
+<pre data-lang="zh">## Paperclip Wake Payload
+
+把这份 wake payload 当作当前心跳的最高优先级变化。
+本心跳作用域限于下面这张 issue。处理完本次 wake 之前，不要切换到其他 issue。
+先用这里的内联 wake 数据，再去重新拉取 issue 线程。
+
+- reason: issue_assigned
+- issue: ZIJ-2 实现 Canvas 小游戏核心循环
+- fallback fetch needed: no
+- issue status: in_review
+- issue priority: high</pre>
+</div>
+
+<p><strong>动作：</strong>按验收标准复现、截图、留 pass/fail 评论。通过则链条继续走向 <code>done</code>；打回则回到实现者（其下一轮 Prompt 会看到评论增量）。</p>
+
+<p><strong>下一棒：</strong>通过 → 解锁被 <code>blockedBy</code> 的验收单（如 ZIJ-3）或直接关闭；打回 → 工程师再醒。</p>
+
+<!-- ========== 8 ========== -->
+<h3>12.8 done；CEO 再醒则巡检</h3>
+
+<div class="step">
+  <span class="who">CEO</span><strong>不是自动每天开站会</strong>
+  <p>子任务陆续 <code>done</code>、有人 @CEO、你 Invoke、或你开了 CEO 定时心跳时，CEO 才会再醒。巡检时仍读同一份 CEO <code>AGENTS.md</code> + 默认执行模板；Wake 可能是某张总单上的评论或审批后续。</p>
+</div>
+
+<p><strong>整条链路的接棒本质：</strong>上一个 agent 用 Tool 改了控制面（建单、改状态、留评论、提审批）→ Paperclip 生成下一个 agent 的 Wake Prompt → 下一棒开始。</p>
+
+<div class="note green"><strong>一句话：</strong>董事会管闸门与招人；CEO 管战略与委派；IC/QA 管交付与验收。每一棒的「看见什么」= 角色指令原文 + 执行模板原文 + 本轮 Wake/Resume 原文。</div>
+
+<h3>12.9 和 Prompt / Skill / Tool 怎么对上</h3>
+
+<table>
+  <thead><tr><th></th><th>在上面时间线里对应什么</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Prompt</strong></td><td>各步粘贴的 <code>AGENTS.md</code>、默认执行模板、Wake / Resume</td></tr>
+    <tr><td><strong>Skill</strong></td><td>注入的 <code>paperclip</code> 手册（checkout、改状态、战略审批 API……）；教模型怎么用 Tool</td></tr>
+    <tr><td><strong>Tool</strong></td><td>Bash/curl、编码工具、上传脚本——真正改世界的手</td></tr>
+  </tbody>
+</table>
+
+<blockquote>API 不是第四类。它是 Skill 告诉你「用 Tool 去打控制面」。</blockquote>
+
+<h2>13 · 收束</h2>
+
+<p>如果只带走这些：</p>
+
+<ol>
+  <li>你是董事会，不是一线写代码的那个人。</li>
+  <li>你给的是 mission；CEO 出战略让你批，批完才大规模开工。</li>
+  <li>组织树管「有谁」；任务树管「干什么」——前者你落盘，后者员工拆出来。</li>
+  <li>父子只是归属；真正的先后靠依赖 DAG（<code>blockedByIssueIds</code>）。</li>
+  <li>做完不等于过关；<code>executionPolicy</code> 可强制走 QA / 审批链。</li>
+  <li>Agent 视角按时间线看：每棒读角色指令 + 执行模板 + Wake；Skill 教规程，Tool 改控制面并触发下一棒的 Prompt。</li>
+  <li>你盯闸门、油箱和救护车；日常拆活派活交给组织自己转。</li>
+</ol>
+
+<p>本地想再跑一遍：</p>
+
+<pre><code>npx paperclipai onboard --yes   # 首次
+npx paperclipai run             # 之后启动
+# UI: http://127.0.0.1:3100</code></pre>
+
+<p>更细的官方入口：<a href="https://docs.paperclip.ing">docs.paperclip.ing</a> · <a href="https://github.com/paperclipai/paperclip">GitHub</a>。</p>
