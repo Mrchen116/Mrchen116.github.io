@@ -50,6 +50,17 @@
       border-radius: 4px; overflow: auto; font-size: 13px; line-height: 1.6;
       font-family: "JetBrains Mono", monospace; white-space: pre; }
     pre code { background: transparent; color: inherit; padding: 0; }
+    pre[data-prompt] { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .lang-toggle { position: sticky; top: 12px; right: auto; bottom: auto; z-index: 10;
+      width: fit-content; margin: 12px 0 16px auto;
+      display: flex; padding: 2px; border: 1px solid var(--a-rule); border-radius: 999px;
+      background: var(--a-paper); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .lang-toggle button { border: 0; background: transparent; color: var(--a-muted);
+      padding: 6px 14px; cursor: pointer; border-radius: 999px;
+      font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 600; }
+    .lang-toggle button.active { background: var(--a-ink); color: var(--a-paper); }
+    [data-lang="zh"] .prompt-block > pre[data-lang="en"],
+    [data-lang="en"] .prompt-block > pre[data-lang="zh"] { display: none; }
     table { width: 100%; border-collapse: collapse; margin: 18px 0;
       border: 1px solid var(--a-rule); border-radius: 4px; font-size: 14.5px;
       font-family: -apple-system, "Helvetica Neue", "PingFang SC", sans-serif; }
@@ -100,14 +111,23 @@
     hr { border: 0; border-top: 1px solid var(--a-rule); margin: 44px 0; }
     @media (max-width: 640px) {
       body { padding: 32px 18px 64px; font-size: 16px; }
+      .lang-toggle { top: 12px; bottom: auto; }
       h1 { font-size: 30px; }
       h2 { font-size: 23px; }
       table { display: block; overflow-x: auto; }
       .diagram > img { min-width: 680px; }
     }
+    .context-demo { width:min(1160px, calc(100vw - 48px)); margin:24px 0 36px;
+      margin-left:calc((100% - min(1160px, calc(100vw - 48px))) / 2); }
+    .context-demo-bar { display:flex; justify-content:space-between; gap:16px; margin-bottom:10px;
+      font:13px/1.6 -apple-system,"PingFang SC",sans-serif; }
+    @media (max-width:640px) {
+      .context-demo { width:100%; margin-left:0; }
+    }
   </style>
+  <script src="../assets/articles/codex-agent-managed-context/context-lab.js" defer></script>
 </head>
-<body>
+<body data-lang="zh">
 
 <div class="eyebrow">OpenAI Codex · Context Management</div>
 <h1>Codex 的新 Context Management：从 Summary Compaction 到 Agent 自主管理记忆</h1>
@@ -117,7 +137,7 @@
 
 <div class="diagram">
   <div class="diagram-title">全文总览：Codex 新版 Context Management</div>
-  <img src="/assets/articles/codex-agent-managed-context/codex-new-compaction.png"
+  <img src="../assets/articles/codex-agent-managed-context/codex-new-compaction.png"
        alt="Codex 新版 Context Management 架构与运行时生命周期总览：Active Context、Notes、History、WorldState 及其工具关系"
        width="1448" height="1086">
   <p class="figure-caption">Active Context 只保留当前 working set；Notes、History 与 WorldState 跨 Window 留存，并在新 Window 中重新注入或按需读取。</p>
@@ -209,112 +229,14 @@ summary + 少量保留内容
 
 <p>因此，新方案真正改变的是 Context 的角色：它不再被当成“全部记忆的唯一容器”，而更像一个可随时重建的 working set。</p>
 
-<h2>2 · 一次 Agent 实际运行：Window #1 如何切到 Window #2</h2>
+<h2 id="agent-run">2 · 一次 Agent 实际运行：Window #1 如何切到 Window #2</h2>
 
-<p>假设用户给 Codex 一个任务：<strong>修复 cache invalidation bug，跑完测试，并且不能修改 public API。</strong> 下面按真实运行顺序走一遍。</p>
+<p>修复 cache invalidation bug，跑完测试，并且<strong>不能修改 public API</strong>。跟着这条约束，看 Agent 怎样跨越两个窗口继续工作。</p>
 
-<div class="step user">
-  <span class="who user">user</span><strong>Window #1 接收任务</strong>
-  <p>Runtime 建立当前 Context，里面有 system / developer instructions、当前 WorldState、用户任务和工具定义。新的 token-budget context 还会给模型一个 Window identity：当前 agent、first window id、current window id，以及存在时的 previous window id。</p>
-</div>
-
-<div class="step bash">
-  <span class="who bash">runtime</span><strong>History 自动积累</strong>
-  <p>Agent 开始 grep、读文件、修改代码、执行测试。user message、assistant message、tool call、tool output 等会被 Runtime 正常记录进 History。Agent 不需要调用任何 <code>history.write</code>。</p>
-</div>
-
-<div class="step sub">
-  <span class="who sub">agent</span><strong>在当前 Window 中主动维护 Notes</strong>
-  <p>例如 Agent 已经确认 root cause，并希望把关键状态保存下来，可以调用：</p>
-  <pre><code>notes.write_file(
-  path="state.md",
-  text="Goal: fix cache invalidation...\nRoot cause: ...\n"
-)
-
-notes.append_to_file(
-  path="experiments.md",
-  text="Approach A failed because ...\n"
-)</code></pre>
-  <p><strong>这一步不会切换 Context Window。</strong>写 Notes 和 rollover 是两个独立动作。</p>
-</div>
-
-<div class="step">
-  <span class="who">agent</span><strong>模型开始感知 Context pressure</strong>
-  <p>模型可以通过 <code>get_context_remaining()</code> 主动查询当前 Window 的剩余 token；Runtime 也可以在接近阈值时注入 reminder。于是“我还能工作多久”从 Harness 的隐藏状态，变成了 Agent 能用于决策的信号。</p>
-</div>
-
-<div class="step sub">
-  <span class="who sub">agent</span><strong>做一次 checkpoint</strong>
-  <p>Window 快到边界时，Agent 可以覆盖更新 <code>state.md</code>，把真正影响后续工作的内容写进去：目标、用户约束、当前发现、失败方案、已改文件、下一步。</p>
-</div>
-
-<div class="step">
-  <span class="who">agent</span><strong>调用 <code>new_context()</code></strong>
-  <p>只有这里才真正请求开始新的 Context Window。这个动作只换模型的 working memory，不会重置环境状态，也不会把任务当成一个新任务。</p>
-</div>
-
-<div class="step bash">
-  <span class="who bash">runtime</span><strong>创建 Window #2，不生成传统 summary bridge</strong>
-  <p>token-budget compaction 路径会直接安装新的 Context Window。WorldState 会重新建立；History 与 Notes 继续留在持久层。公开源码中特别强调新的 Window 会在<strong>不总结 conversation history</strong>的情况下开始。</p>
-</div>
-
-<div class="step sub">
-  <span class="who sub">agent</span><strong>在 Window #2 按需恢复</strong>
-  <p>Runtime 会提供一个很小的 notes/thread hint，帮助模型知道“有哪些近期 Notes”；正文并不会全部自动灌回来。Agent 可能先读 <code>state.md</code>，如果还缺某个旧实验的细节，再去 History 搜索和精确读取。</p>
-  <pre><code>notes.read_file(path="state.md")
-
-history.search_contents(query="lock ordering")
-history.read_item(window_id="...", item_id="...")</code></pre>
-</div>
-
-<div class="diagram">
-  <div class="diagram-title">图 2：一次完整的 Window rollover</div>
-  <svg viewBox="0 0 980 660" role="img" aria-label="Context window rollover flow">
-    <defs>
-      <marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-        <path d="M0,0 L8,4 L0,8 z" fill="#8b3a2f"/>
-      </marker>
-    </defs>
-
-    <rect x="65" y="35" width="310" height="82" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
-    <text x="220" y="67" text-anchor="middle" font-size="16" font-weight="700" fill="#8b3a2f">Window #1</text>
-    <text x="220" y="92" text-anchor="middle" font-size="12" fill="#6b6b6b">消息 + tool traffic + 当前 working set</text>
-
-    <rect x="605" y="35" width="310" height="82" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
-    <text x="760" y="67" text-anchor="middle" font-size="16" font-weight="700" fill="#8b3a2f">Window #2</text>
-    <text x="760" y="92" text-anchor="middle" font-size="12" fill="#6b6b6b">fresh active context</text>
-
-    <rect x="65" y="185" width="310" height="72" rx="8" fill="#f1e6ec" stroke="#b88aa0"/>
-    <text x="220" y="216" text-anchor="middle" font-size="14" font-weight="700" fill="#7a3a5c">notes.write / append</text>
-    <text x="220" y="239" text-anchor="middle" font-size="12" fill="#6b6b6b">保存 state / experiments / todo</text>
-
-    <rect x="65" y="325" width="310" height="72" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
-    <text x="220" y="356" text-anchor="middle" font-size="14" font-weight="700" fill="#8b3a2f">new_context()</text>
-    <text x="220" y="379" text-anchor="middle" font-size="12" fill="#6b6b6b">显式请求 rollover</text>
-
-    <rect x="605" y="185" width="310" height="72" rx="8" fill="#ecf0e6" stroke="#a8c0a0"/>
-    <text x="760" y="216" text-anchor="middle" font-size="14" font-weight="700" fill="#4a6f3a">WorldState + thread_hint</text>
-    <text x="760" y="239" text-anchor="middle" font-size="12" fill="#6b6b6b">Runtime 自动重新注入</text>
-
-    <rect x="605" y="325" width="310" height="72" rx="8" fill="#f1e6ec" stroke="#b88aa0"/>
-    <text x="760" y="356" text-anchor="middle" font-size="14" font-weight="700" fill="#7a3a5c">notes.read / search</text>
-    <text x="760" y="379" text-anchor="middle" font-size="12" fill="#6b6b6b">只恢复当前真正需要的状态</text>
-
-    <rect x="605" y="465" width="310" height="72" rx="8" fill="#e6eef0" stroke="#9ab8be"/>
-    <text x="760" y="496" text-anchor="middle" font-size="14" font-weight="700" fill="#2a6470">history.search / read</text>
-    <text x="760" y="519" text-anchor="middle" font-size="12" fill="#6b6b6b">Notes 不够时回查原始证据</text>
-
-    <line x1="220" y1="117" x2="220" y2="181" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar2)"/>
-    <line x1="220" y1="257" x2="220" y2="321" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar2)"/>
-    <path d="M375 361 C470 361 510 76 601 76" fill="none" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar2)"/>
-    <line x1="760" y1="117" x2="760" y2="181" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar2)"/>
-    <line x1="760" y1="257" x2="760" y2="321" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar2)"/>
-    <line x1="760" y1="397" x2="760" y2="461" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar2)"/>
-
-    <rect x="310" y="575" width="360" height="48" rx="8" fill="#ffffff" stroke="#e6e3dc"/>
-    <text x="490" y="605" text-anchor="middle" font-size="13" fill="#1a1a1a">History / Notes 都没有因为换 Window 被删除</text>
-  </svg>
-  <p class="figure-caption">关键区别：<code>notes.write_file</code> 只是持久化状态；<code>new_context</code> 才触发 rollover。新 Window 不把全部旧内容自动灌回来，而是按需恢复。</p>
+<div class="context-demo">
+  <div class="context-demo-bar"><span>图 2 · 跨窗口运行流程</span><a href="../assets/articles/codex-agent-managed-context/context-lab.html" target="_blank" rel="noopener">全屏查看 ↗</a></div>
+  <codex-context-lab embedded role="region" aria-label="Codex 跨窗口运行交互演示"></codex-context-lab>
+  <noscript><p>启用 JavaScript 即可查看交互演示：Agent 写入 Notes，换窗后读取检查点，再从 History 按需找回原始细节。</p></noscript>
 </div>
 
 <h2>3 · Notes 与 History：两种完全不同的 Memory</h2>
@@ -351,7 +273,7 @@ state.md V3</code></pre>
 
 <div class="note warn"><strong>当前公开 API 的限制：</strong>Notes 有 list / read / search / append / write，但没有显式的 delete / rename / move。这个设计更适合维护少量稳定文件并不断 overwrite，而不是每个 Window 都创建一份新的 checkpoint 文件。</div>
 
-<p>Notes 的路径是虚拟路径，不对应工作区真实文件；当前 agent 默认操作自己的 <code>&lt;agent_name&gt;/notes/...</code>，同时允许跨 agent 访问。单个 Note 文件有大小上限，接近上限时模型应创建其他文件，而不是无界增长一个文件。</p>
+<p>Notes 的路径是虚拟路径，不对应工作区真实文件；相对路径定位到当前 Agent 的 <code>&lt;agent_name&gt;/notes/...</code>，绝对路径可定位其他 Agent。工具说明允许跨 Agent 读写；本文采用的 Astra guidance 则进一步要求只写当前线程、可以读取其他线程。这是工具能力与模型使用规则的区别。单个文件上限为 1,000,000 UTF-8 字节。</p>
 
 <h3>History：Runtime 自动保存的只读原始档案</h3>
 
@@ -359,8 +281,8 @@ state.md V3</code></pre>
 ├── Window #1
 │   ├── item: user
 │   ├── item: assistant
-│   ├── item: tool
-│   ├── item: tool output
+│   ├── item: assistant / tool call
+│   ├── item: tool / tool output
 │   └── ...
 └── Window #2
     ├── item: user
@@ -376,7 +298,7 @@ state.md V3</code></pre>
   </tbody>
 </table>
 
-<p><strong>item 不是一个完整 turn。</strong>它更接近 normalized history 中的一条记录，可以是 user、assistant、tool、system 或 developer 内容。<code>list_items</code> 还提供 <code>max_chars_per_item</code>，说明浏览阶段可以只拿 preview；确定目标之后再 <code>read_item</code> 精确读取。</p>
+<p>一个 <strong>item 是一条归一化历史记录</strong>，可以承载 user、assistant、tool、system 或 developer 内容。当前窗口的记录也会持续进入 History，不必等到换窗；新条目可能延迟几秒才能查到。<code>list_items</code> 还提供 <code>max_chars_per_item</code>，说明浏览阶段可以只拿 preview；确定目标之后再 <code>read_item</code> 精确读取。</p>
 
 <div class="callout">
   <p><strong>两者的核心区别：</strong></p>
@@ -389,7 +311,7 @@ state.md V3</code></pre>
       <tr><td>主要用途</td><td>快速恢复工作状态</td><td>Notes 不够、写错或需要细节时查证</td></tr>
     </tbody>
   </table>
-  <p><strong>Notes 是 Agent 的认知；History 是发生过的事实。</strong></p>
+  <p><strong>Notes 保存整理后的工作状态；History 保留原始消息和工具记录。</strong>历史中的模型判断仍可能出错，需要结合工具结果核对。</p>
 </div>
 
 <p>例如 Notes 只记了一句“方案 A 失败”，新的 Window 突然需要知道当时到底为什么失败，就可以用 History 找回原始测试结果，而不是依赖那句已经压缩过的结论。</p>
@@ -426,7 +348,7 @@ Window #3 开局已经背着越来越大的 memory payload
     <rect x="365" y="120" width="250" height="110" rx="8" fill="#ecf0e6" stroke="#a8c0a0"/>
     <text x="490" y="153" text-anchor="middle" font-size="15" font-weight="700" fill="#4a6f3a">small thread_hint</text>
     <text x="490" y="181" text-anchor="middle" font-size="12" fill="#6b6b6b">Runtime 自动获取</text>
-    <text x="490" y="203" text-anchor="middle" font-size="12" fill="#6b6b6b">只做 orientation / index</text>
+    <text x="490" y="203" text-anchor="middle" font-size="12" fill="#6b6b6b">提供恢复线索</text>
 
     <rect x="680" y="110" width="260" height="130" rx="8" fill="#f5ebe6" stroke="#c9a89e"/>
     <text x="810" y="145" text-anchor="middle" font-size="16" font-weight="700" fill="#8b3a2f">New Window</text>
@@ -437,21 +359,21 @@ Window #3 开局已经背着越来越大的 memory payload
     <line x1="300" y1="175" x2="361" y2="175" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar3)"/>
     <line x1="615" y1="175" x2="676" y2="175" stroke="#8b3a2f" stroke-width="2" marker-end="url(#ar3)"/>
   </svg>
-  <p class="figure-caption">新模式并不是“不自动恢复”，而是把自动恢复缩成一个很小的 orientation；真正的正文由模型按需加载。</p>
+  <p class="figure-caption">运行时尝试获取一段简短的 Notes 提示；Agent 再用工具读取所需正文。提示缺失时，也可以主动列出 Notes 或查阅 History。</p>
 </div>
 
-<p>公开的 history-notes extension 会在 thread context 构造阶段向 backend 请求一个 <code>thread_hint</code>，客户端限制它最多约 4KB。测试 fixture 展示的形态类似“近期 Notes（最多 5 个，按最新排序）+ 文件路径/规模信息”。它不是暴露给模型的 <code>notes.thread_hint</code> tool，而是 Runtime 自己获取之后塞进新的 Context Window。</p>
+<p>组装窗口输入时，Runtime 自动向 Notes 后端请求 <code>thread_hint</code>。后端返回非空、且不超过 <strong>4,000 UTF-8 字节</strong>的文本，就把它放进窗口信息消息；请求失败、没有文本或文本超限，则省略这段提示。Agent 不需要为此调用工具。</p>
 
-<p>因此，一个更准确的心智模型是：</p>
+<p>提示可以告诉模型有哪些笔记可读，例如最近文件的路径和大小；具体内容由后端决定。它不会把所有 Notes 正文自动装入新窗口。即使没有拿到提示，已经保存的 Notes 仍然存在，Agent 可以先列目录，再读取文件。</p>
 
-<pre><code>自动恢复：给我一张“有哪些记忆”的小目录
-主动恢复：我决定现在真正要把哪一页拿回工作内存</code></pre>
+<pre><code>运行时：取得简短提示 → 放进窗口信息
+Agent ：根据线索选文件 → 用 notes.read_file 读取所需正文</code></pre>
 
-<p>这也是为什么 <code>notes.read_file</code> 必须存在。Notes 属于 persistent store，不属于 active context；“写过”不意味着“未来每一个 Window 都应该自动背着它”。</p>
+<p>Notes 保存在窗口之外；一次读取的工具返回，才会把选中的正文带入当前输入。这样，每次恢复工作都可以只加载眼下需要的信息。</p>
 
-<h2>5 · Context Management API：为什么是 <code>notes.read_file</code></h2>
+<h2>5 · Namespace Tool：按职责组织工具</h2>
 
-<p>把目前这套模式相关的 model-callable tools 放在一起，一共可以看成三组：</p>
+<p><strong>Namespace tool 用一个命名空间组织一组相关工具。</strong>命名空间有自己的名称和公共说明，下面的每个工具再定义名称、用途和参数。在这套上下文管理机制中，<code>notes</code> 管理笔记，<code>history</code> 查询历史；查询余量和请求换窗则由两个独立工具负责：</p>
 
 <div class="tree">Context control
 ├── get_context_remaining
@@ -470,14 +392,12 @@ history
 ├── read_item
 └── search_contents</div>
 
-<p>这里容易产生一个误解：<code>notes.read_file</code> 并不是传统 function calling 中一个名字就叫 <code>"notes.read_file"</code> 的平铺函数。Codex 使用了 Responses API 的 <strong>namespace tool</strong> 结构。</p>
-
-<p>在 Codex 内部，工具 identity 明确拆成：</p>
+<p><code>notes.read_file</code> 表示 <code>notes</code> 命名空间下的 <code>read_file</code> 工具。调用时，用 <code>namespace</code> 和 <code>name</code> 两个字段定位它：</p>
 
 <pre><code>namespace = "notes"
 name      = "read_file"</code></pre>
 
-<p>请求序列化后的结构可以理解成：</p>
+<p>模型收到的工具定义中，namespace 是外层容器，具体工具放在它的 <code>tools</code> 数组里：</p>
 
 <pre><code>{
   "tools": [
@@ -514,32 +434,30 @@ name      = "read_file"</code></pre>
   ]
 }</code></pre>
 
-<p>Codex 的协议结构也给 function call 单独保留了 <code>namespace</code> 与 <code>name</code> 字段，而 ToolRegistry 的 key 也是这个二元 identity。因此我们写作时用 <code>notes.read_file</code> 只是一个更方便的人类表示。</p>
-
-<p>Namespace 的价值很直接：</p>
+<p>这样组织工具有三个作用：</p>
 
 <ul>
-  <li><strong>公共说明只写一次。</strong><code>notes</code> 可以在 namespace description 里统一解释“这是跨 Window 的私有虚拟 Notes”，子工具只解释各自动作。</li>
-  <li><strong>模型看到的是 subsystem。</strong><code>notes.*</code>、<code>history.*</code>、<code>collaboration.*</code> 比十几个无关函数更容易形成 capability domain。</li>
-  <li><strong>自然避免命名冲突。</strong><code>notes.search_contents</code> 和 <code>history.search_contents</code> 都可以保持短函数名。</li>
+  <li><strong>共享说明。</strong><code>notes</code> 的 description 统一说明笔记的用途、持久性和访问范围，每个工具的 description 再解释具体操作。</li>
+  <li><strong>按职责分组。</strong>模型可以从工具定义中看到，读写笔记属于 <code>notes</code>，查阅原始记录属于 <code>history</code>。</li>
+  <li><strong>区分同名工具。</strong><code>notes.search_contents</code> 搜索笔记，<code>history.search_contents</code> 搜索历史；namespace 明确了各自的操作对象。</li>
 </ul>
 
-<div class="note"><strong>一个细节：</strong>Codex 当前的 Namespace 是两层结构：namespace 下面放 function/custom tool；公开类型里并没有“namespace 里再嵌 namespace”的递归 variant，所以它不是一棵任意深度的工具树。</div>
+<p>Codex 这里采用两层组织：<strong>namespace → 具体工具</strong>。同一个 namespace 下可以放 function tool 或 custom tool。</p>
 
 <h2>6 · 从 Prompt 与 Tool Description 看这套设计的真实意图</h2>
 
-<p>这一部分不看我们自己怎么抽象，而看 Codex 实际给模型的 schema、context message 和 lifecycle signal。由于公开仓库中的长 description 属于源码文本，下面只保留少量关键原文短句，其余按字段逐项展开完整语义。</p>
+<p>工具说明约定 Notes 和 History 怎样使用；guidance、reminder 与 fallback 则在不同阶段指导 Agent 保存和恢复状态。下面依次展开这些约定。</p>
 
 <h3>6.1 Notes namespace：明确告诉模型“这是跨 Window 的私有工作记忆”</h3>
 
-<blockquote>“survive context-window transitions”</blockquote>
+<blockquote>“survive context-window transitions”<br>中文：跨上下文窗口切换后仍然保留。</blockquote>
 
 <p>Notes namespace 的完整语义包含：</p>
 
 <ul>
   <li>这是模型可以读取和维护的 private notes，并且在当前 rollout 内跨 Context Window 存活。</li>
   <li>路径是 virtual path，不是操作系统文件路径；相对路径默认位于当前 agent 的 notes 区。</li>
-  <li>允许使用绝对 agent path 访问其他 agent 的 Notes，因此它也能成为 multi-agent 之间的持久状态接口。</li>
+  <li>工具说明允许用绝对路径读写其他 Agent 的 Notes；Astra guidance 要求模型把写入限制在当前线程。</li>
   <li>成功 write 后，read 应立即看到结果；但 list/search 可能存在几秒的 eventually-consistent 延迟。</li>
   <li>每个文件有大小上限；接近上限时应该创建其他文件，而不是继续无界增长。</li>
   <li>这些内容被定义为 model-only private state；工具 schema 还要求模型静默利用它继续任务，而不是向用户暴露内部存储与恢复机制。</li>
@@ -560,7 +478,7 @@ name      = "read_file"</code></pre>
 
 <h3>6.2 History namespace：明确定位为 Context reset 后的原始恢复层</h3>
 
-<blockquote>“Recover prior conversation after a context-window reset”</blockquote>
+<blockquote>“Recover prior conversation after a context-window reset”<br>中文：在上下文窗口重置后恢复先前的对话。</blockquote>
 
 <p>History namespace 的完整语义包括：</p>
 
@@ -568,7 +486,7 @@ name      = "read_file"</code></pre>
   <li>它用于 Context Window reset 后恢复 prior conversation，不是当前 Window 的自动 continuation summary。</li>
   <li>History 被规范化为 Window 与 Item；模型应该原样使用工具返回的 opaque window/item IDs 做后续过滤与读取。</li>
   <li>默认操作当前 agent 的 History，也允许指定其他 agent。</li>
-  <li>History 是只读的，模型不能把自己的解释覆盖成“事实”。</li>
+  <li>History 是只读的，模型不能通过这些工具改写已保存的原始记录。</li>
   <li>新产生的 History item 可能过几秒才能被 list/search 检索到。</li>
   <li>同样被定义为 model-only recovery state，应静默使用。</li>
 </ul>
@@ -597,9 +515,11 @@ name      = "read_file"</code></pre>
 
 <p>公开 description 的语义是：开始一个新的 Context Window，但不要清除、重置或改变 environment state。调用之后给模型的返回消息里还有一句极关键的短句：</p>
 
-<blockquote>“without summarizing conversation history”</blockquote>
+<blockquote>“without summarizing conversation history”<br>中文：不对对话历史生成摘要。</blockquote>
 
 <p>也就是说，新的 token-budget 路径并不要求先生成一份旧式 summary bridge。它保留外部持久层，然后建立新的 working set。</p>
+
+<p><code>new_context()</code> 没有“先写 Notes 才能调用”的前置条件。处理器不检查 Notes 是否存在、是否更新过，也不判断记录是否足够完整；主动切换还会跳过自动 rollover 的 fallback 提示。Agent 可能此前已经看过常驻 guidance 或接近阈值的 reminder，但调用本身不会再安排一轮“先保存再切换”。如果没有写 Notes，后续仍可查 History 恢复，只是要重新定位原始任务和工作进展。</p>
 
 <h3>6.5 Context Window metadata：模型知道自己处在哪个 Window</h3>
 
@@ -610,17 +530,19 @@ First context window id: ...
 Current context window id: ...
 Previous context window id: ...</code></pre>
 
-<p>这意味着 Window 本身已经变成模型可感知的对象：模型知道自己不是“莫名其妙失忆”，而是从一个明确的 previous window 进入了 current window。</p>
+<p>Agent name 标识当前 Agent；First、Current、Previous 分别标识首个、当前和上一窗口。模型可以用 Previous 定位旧窗口，再通过 History 工具恢复相关条目。</p>
 
 <h3>6.6 自动 reminder：直接教育模型哪一层会消失、哪一层会保留</h3>
 
-<p>Codex 公开了一个默认 token-budget reminder template。它完整表达的意思是：</p>
+<p>Codex 源码内置了一份兜底 reminder template；模型元数据可以提供更具体的版本。内置模板表达的意思是：</p>
 
 <div class="callout">
   <p>当前 Context Window 已接近耗尽，只剩 <code>{n_remaining}</code> token，并且很快会被自动 reset。Reset 之后，当前 Window 里的 message items 会从新 Window 的 active context 中移除；但 Notes 与 History items 会跨 Window 持久存在。</p>
 </div>
 
-<p>这段提示非常关键，因为它直接把下面这个 memory model 教给模型：</p>
+<p>配置了 reminder 阈值后，运行时会在一次模型响应结束、检查到剩余基础预算低于或等于阈值时，把提示作为 developer 消息加入上下文，供下一次请求读取；每个 Window 只提醒一次。上面的内置模板主要说明哪些内容会消失、哪些会保留；实际模型下发的 reminder 可以进一步明确要求先写 Notes。它的正文需要结合当前模型元数据判断，不能只看源码内置模板。</p>
+
+<p>这段提示向模型说明了三个层次：</p>
 
 <pre><code>Context messages = volatile
 Notes            = persistent + model-managed
@@ -636,36 +558,104 @@ guidance_message
 auto_compact_fallback_prompt
 auto_compact_fallback_buffer_tokens</code></pre>
 
-<p>源码对最后一个字段的解释尤其有意思：在 compaction threshold 之后，还可以额外给一段 token buffer，用于 <strong>fallback note-taking</strong>。也就是即使 Agent 没有主动及时切 Window，Host 仍可以在最终 rollover 前给它一个“快断电了，把重要工作状态写到持久层”的机会。</p>
+<p>这里要区分<strong>基础 compaction 阈值</strong>和<strong>最终必须换窗口的上限</strong>。配置了 fallback prompt 与正数 buffer 时，达到基础阈值后可以先留在旧 Window，注入一条 developer 提示，让模型使用额外预算保存工作状态。此时正常工具在执行层仍然可用；实际 fallback 提示可以要求模型只使用 Notes 与换窗工具，但运行时没有为此增加专门的工具执行白名单。</p>
 
-<pre><code>正常 working budget
-████████████████████████████
+<table>
+  <thead><tr><th>触发情况</th><th>运行时如何处理</th></tr></thead>
+  <tbody>
+    <tr><td>Agent 主动调用 <code>new_context()</code></td><td>直接进入换窗口流程，跳过自动 fallback；不检查是否写过 Notes。</td></tr>
+    <tr><td>达到基础阈值，配置了 fallback prompt 与 buffer，且尚未到最终上限</td><td>在旧 Window 中注入一次 fallback 提示，给后续模型请求使用额外预算；按提示保存状态，执行层仍保留正常工具能力。</td></tr>
+    <tr><td>额外预算耗尽，或先碰到模型的有效上下文硬上限</td><td>需要继续执行时，直接换窗口；不会等待 Notes 写入成功。一次响应直接越过最终上限时，也可能来不及走 fallback。</td></tr>
+    <tr><td>未配置 fallback prompt</td><td>不会启用这段额外预算；达到基础阈值后，需要继续执行就换窗口。</td></tr>
+  </tbody>
+</table>
 
-↓ reminder threshold
-████
+<p>例如基础阈值是 9,000 tokens、fallback buffer 是 4,000，且模型硬上限更高：一次响应后用量达到 9,500，运行时可以先注入 fallback 提示；模型随后仍在旧窗口里工作，可以写 Notes，再主动调用 <code>new_context()</code>。如果它没有主动切换，用量达到或超过 13,000 后，运行时也会换窗口，<strong>无论它是否写过 Notes</strong>。这些数字用于说明流程，不代表产品统一默认值。</p>
 
-↓ compaction threshold
-│
-│ 额外 fallback buffer
-│ 用于保存重要 state / notes
-████
+<pre><code>接近基础阈值
+  → reminder：说明剩余预算与跨窗口保留规则
 
-↓ rollover
-new context window</code></pre>
+达到基础阈值
+  ├─ 有 fallback prompt + buffer，且仍有空间
+  │    → 在旧 Window 提示保存状态，留出额外预算
+  │    → Agent 主动 new_context，或预算耗尽后自动换窗口
+  └─ 没有 fallback 空间
+       → 需要继续执行时直接换窗口</code></pre>
 
-<h3>6.8 两个最关键的生产 Prompt 目前看不到正文</h3>
+<p><strong>这是一段提示驱动的保存机会，没有“必须写 Notes 才能继续”的门禁。</strong>只要使用本文讨论的 token-budget 路径，最终执行的仍是重建 Window，不会因为 Agent 没写 Notes 就改走传统的摘要压缩。未启用这套机制的线程，才按原有 local / remote compaction 路径处理。</p>
 
-<p>真正决定模型如何执行这套 policy 的还有两个 model-owned 字段：</p>
+<section class="astra-prompts">
+<h3>6.8 Astra 的默认 guidance、reminder 与 fallback</h3>
 
-<ul>
-  <li><code>guidance_message</code>：常驻的 context-window guidance。</li>
-  <li><code>auto_compact_fallback_prompt</code>：自动 rollover 前采样的一条 developer message。</li>
-</ul>
+<div class="lang-toggle" aria-label="提示词语言">
+  <button type="button" data-target="zh" class="active">中文译文</button>
+  <button type="button" data-target="en">EN 原文</button>
+</div>
 
-<p>公开仓库能看到它们的字段、注入位置、长度校验和测试 fixture；但生产模型实际使用的文本来自 model metadata，不在 OSS 中。因此，测试里的“保存重要 context”“使用 model-owned guidance”之类字符串只能证明机制，不能当成线上 Codex 的真实 prompt。</p>
+<p>下面是 Astra 模型配置提供的三段提示，以及对应的默认参数。英文原文与中文译文可通过语言按钮切换；换窗过程中的插入位置也可以在第 2 节交互演示中查看。</p>
+
+<table>
+  <thead><tr><th>提示</th><th>对应默认参数</th><th>触发时机</th></tr></thead>
+  <tbody>
+    <tr><td>guidance</td><td>常驻指引，无独立 token 阈值</td><td>新建或重建完整窗口上下文时提供；作为窗口内的持续指引。</td></tr>
+    <tr><td>reminder</td><td>剩余基础预算 ≤ 6,144 tokens</td><td>一次模型响应结束后检查，加入下一次请求的上下文；每个 Window 一次。</td></tr>
+    <tr><td>fallback</td><td>额外预算 16,384 tokens</td><td>基础预算耗尽、尚未触发换窗且仍有 buffer / 硬上限空间时，在旧窗口注入一次。</td></tr>
+  </tbody>
+</table>
+
+<p>这里的 6,144 是“还剩多少 token 时提醒”，16,384 是“基础预算用完后最多额外留多少空间”，都不是窗口总大小。主动调用 <code>new_context()</code> 会跳过自动 fallback；buffer 耗尽或碰到硬上限时，仍会按前述规则换窗。</p>
+
+<h4>guidance：持续维护 checkpoint，换窗后主动恢复</h4>
+<p>字段 <code>guidance_message</code>。要求记录目标、决策、进展、经验、下一步及相关 Window / Item ID，并说明换窗后的恢复方法。</p>
+<div class="prompt-block">
+<pre data-prompt="guidance_message" data-lang="zh"><code>对于可能跨越多个上下文窗口的任务，使用 `notes` 维护一份简洁的检查点，记录目标、决策、进展、经验和下一步。对于你当前正在处理的每一条相关用户请求，以及重要操作或工具调用，都要记录其窗口 ID 和条目 ID。之后可以使用 `history` 工具，通过这些引用查找细节。注意，每个非 assistant 条目（例如 user、developer、工具响应）都有一个条目 ID `[id: ...]`，紧跟在该条目的内容之后。相对笔记路径属于当前线程；绝对路径可以读取其他线程的笔记，但写入仅限当前线程。
+
+建议在工作过程中逐步记笔记，以免遗漏重要信息。也可以使用 `get_context_remaining` 工具查询剩余 token 预算，以便更好地规划。一旦 token 预算耗尽，你将无法再访问当前窗口，并会在一个全新的上下文窗口中继续；届时只能通过 `notes` 和 `history` 工具恢复信息。因此，要避免在没有留下任何记录的情况下耗尽上下文窗口。
+
+如果 `&lt;context_window&gt;` 中存在 Previous context window id，说明发生过上下文重置，当前是一个新窗口。重置后，先读取检查点，再使用只读的 `history` 工具找回缺失的细节。已知窗口 ID 和条目 ID 时，优先直接使用 `read_item`；缺少或不确定这些 ID 时，先用 `list_items` 或 `search_contents` 定位条目。
+
+把 notes 和 history 当作内部记录。不要在面向用户的消息中提及它们。
+</code></pre>
+<pre data-prompt="guidance_message" data-lang="en"><code>For tasks that may span context windows, use `notes` to maintain a concise checkpoint of the goal, decisions, progress, learnings and next steps. Include the window ID and item ID for every relevant user request you are currently solving as well as important actions/tool calls. You can use `history` tool to look up details with the references later. Note that every non-assistant item, such as user, developer, tool response, has an item id `[id: ...]` that is immediately after its item content. Relative note paths belong to the current thread; absolute paths may read other threads' notes, but writes are limited to the current thread.
+
+It is a good idea to take incremental notes while you work so that you do not miss any important info. You can also use `get_context_remaining` tool to find the remaining token budget for better planning. Once the token budget is exhausted, you will lose access to the current window and continue in a fresh context window and you can only recover through `notes` and `history` tools. So be careful not to over-run the context window without any documentation.
+
+If Previous context window id is present in `&lt;context_window&gt;`, it means a context reset occurred and this is a new window. After a reset, read the checkpoint and use the read-only `history` tool to recover any missing details. When a window ID and item ID are known, prefer `read_item` directly; when they are missing or uncertain, use `list_items`, or `search_contents` to locate the item first.
+
+Treat notes and history as internal bookkeeping. Do not mention them in user-facing messages.
+</code></pre>
+</div>
+
+<h4>reminder：剩余不超过 6,144 tokens 时提醒先保存、再换窗</h4>
+<p>字段 <code>reminder_message_template</code>，阈值由 <code>reminder_threshold_tokens</code> 指定。运行时用实际剩余数量替换 <code>{n_remaining}</code>；6,144 是触发阈值，实际提示里的数字可能更低。</p>
+<div class="prompt-block">
+<pre data-prompt="reminder_message_template" data-lang="zh"><code>&lt;context_window_reminder&gt;
+当前上下文窗口即将耗尽，只剩 {n_remaining} tokens。在开启新窗口之前，使用 `notes` 工具保存简洁的进展笔记，记录目标、决策、进展、经验、下一步，以及仍在处理的每一条相关用户请求的窗口 ID 和条目 ID，并记录重要操作或工具调用，以便以后查阅。注意，每个非 assistant 条目（例如 user、developer、工具响应）都有一个条目 ID `[id: ...]`，紧跟在该条目的内容之后。写入或追加笔记时，应尽可能帮助自己在新窗口中恢复工作。如果旧笔记已经过时或不再相关，也建议进行清理。后续上下文窗口不会自动包含当前对话。保存状态后，调用 `functions.new_context`，在一个全新的上下文窗口中继续。
+&lt;/context_window_reminder&gt;</code></pre>
+<pre data-prompt="reminder_message_template" data-lang="en"><code>&lt;context_window_reminder&gt;
+Your current context window is nearly exhausted; only {n_remaining} tokens remain. Before starting a new context window, save concise progress notes with the `notes` tool with the goal, decisions, progress, learnings, next steps, and the window ID and item ID of every relevant user request still being solved, as well as important actions/tool calls for future reference. Note that every non-assistant item, such as user, developer, tool response, has an item id `[id: ...]` that is immediately after its item content. You should write or append notes in a way to best help you recover in a new context window. It is also a good idea to clean up your old notes if they become obsolete or irrelevant. Future context windows will not automatically include the current conversation. After saving your state, call `functions.new_context` to continue in a fresh context window.
+&lt;/context_window_reminder&gt;</code></pre>
+</div>
+
+<h4>fallback：用最多额外 16,384 tokens 完成保存与换窗</h4>
+<p>字段 <code>auto_compact_fallback_prompt</code>，额外预算由 <code>auto_compact_fallback_buffer_tokens</code> 指定。要求停止任务与最终回答，只写入或追加一次 Notes，等结果返回后再调用换窗工具。</p>
+<div class="prompt-block">
+<pre data-prompt="auto_compact_fallback_prompt" data-lang="zh"><code>&lt;context_window_reminder&gt;
+当前上下文窗口已经耗尽。不要在这个窗口中继续执行任务，也不要给出最终回答。下一个窗口不会自动包含这段对话。现在恰好调用一次 `notes` 的写入或追加操作，保存一份简洁的检查点，记录目标、决策、进展、经验、下一步，以及仍在处理的每一条相关用户请求的窗口 ID 和条目 ID，并记录重要操作或工具调用，以便以后查阅。注意，每个非 assistant 条目（例如 user、developer、工具响应）都有一个条目 ID `[id: ...]`，紧跟在该条目的内容之后。等 notes 的结果返回后，调用 `functions.new_context`；不要使用 `notes` 和 `functions.new_context` 以外的任何工具。
+&lt;/context_window_reminder&gt;</code></pre>
+<pre data-prompt="auto_compact_fallback_prompt" data-lang="en"><code>&lt;context_window_reminder&gt;
+The current context window is exhausted. Do not continue the task or give a final answer in this window. The next window will not automatically include this conversation. Make exactly one write or append call to `notes` now to save a concise checkpoint with the goal, decisions, progress, learnings, next steps, and the window ID and item ID of every relevant user request still being solved, as well as important actions/tool calls for future reference. Note that every non-assistant item, such as user, developer, tool response, has an item id `[id: ...]` that is immediately after its item content. After the notes result returns, call `functions.new_context`; do not use any tools other than `notes` and `functions.new_context`.
+&lt;/context_window_reminder&gt;</code></pre>
+</div>
+
+<p><strong>这些是模型应遵守的提示要求，运行时没有检查 Notes 是否写完的门禁。</strong>例如 fallback 要求期间只使用 Notes 与换窗工具，但执行层没有为它新增专门的工具白名单。</p>
+
+<p>在本文讨论的 Astra 上下文管理路径中，未自定义覆盖时，运行时会采用上述模型默认提示、阈值和 buffer。</p>
 
 <div class="note green"><strong>把这些提示放在一起看，设计意图已经足够明确：</strong>OpenAI 不是在尝试写一个更强的 summary prompt，而是在给 Agent 一套 memory primitives、Context budget 信号和 rollover action，然后让“保存什么、何时保存、何时换 Window、下一 Window 恢复什么”逐渐成为 Agent policy 本身。</div>
 
+
+</section>
 
 <h2>7 · 同一方向的另一条路线：Google 的 SKILL.state</h2>
 
@@ -688,7 +678,7 @@ Runtime 校验并更新 State
 
 <div class="diagram">
   <div class="diagram-title">图 4：SKILL.state —— 从 Conversation Machine 到 State Machine</div>
-  <img src="/assets/articles/codex-agent-managed-context/skill-state-agent-state-machine.png"
+  <img src="../assets/articles/codex-agent-managed-context/skill-state-agent-state-machine.png"
        alt="SKILL.state Agent 状态机架构图"
        width="1448" height="1086">
   <p class="figure-caption">SKILL.state 每一步只保留 Skill Spec、当前结构化 State 和最新 Observation；reasoning 是临时计算，State 才是跨步持久信息。</p>
@@ -708,7 +698,7 @@ Runtime 校验并更新 State
   </tbody>
 </table>
 
-<p>反过来，如果<strong>历史轨迹本身就是信息</strong>，纯 SKILL.state 就有明显风险。例如开放式科研探索、陌生代码仓 debugging、审计 / provenance：一个早期 observation 当时看起来没用，几十步后才发现它是关键证据；如果它没有被写入 State，之后就无法从 transcript 中重新找回。</p>
+<p>论文也指出，如果<strong>历史轨迹本身就是任务所需的信息</strong>，只保留当前状态就有局限。例如开放式科研探索、陌生代码仓 debugging、审计 / provenance：一个早期 observation 当时看起来没用，几十步后才发现它是关键证据；如果它没有被写入 State，之后就无法从 transcript 中重新找回。</p>
 
 <div class="note warn"><strong>所以它不是“上下文不重要”。</strong>它真正挑战的是：不要默认把 transcript 当作 execution state。能结构化成“当前世界状态”的信息，就不应该每一步都让模型重新从几十页历史里推导。</div>
 
@@ -728,7 +718,9 @@ Runtime 校验并更新 State
 
 <p>其中 InterCode CTF 很值得注意：100 个完全不同的 challenge 共用同一个五字段 State Schema——<code>discovered_flags</code>、<code>tested_hypotheses</code>、<code>active_files</code>、<code>working_dir</code>、<code>cmd_summary</code>。也就是说，它并不是为每一道题手工设计一份状态，而是尝试为整个任务域定义一次“什么值得跨步保留”。</p>
 
-<h3>结果：不仅更省 token，长程准确率也更稳定</h3>
+<h3>结果：在这些评测中减少 token 消耗、维持长程准确率</h3>
+
+<p>下面摘取论文中使用 <strong>Gemini-3-Flash</strong> 的结果。Warehouse 的分数是正确动作比例，公开基准则使用各自的任务成功率；Stateful 指论文实现的 LangGraph-style 基线。<a href="https://arxiv.org/html/2608.26263v3#S5">实验设置与结果</a>。</p>
 
 <table>
   <thead><tr><th>任务</th><th>代表性 Baseline</th><th>SKILL.state</th><th>信号</th></tr></thead>
@@ -741,7 +733,7 @@ Runtime 校验并更新 State
   </tbody>
 </table>
 
-<p>论文还有一个很有说服力的控制实验：把 Sliding Window、Summary-capped、LLMLingua 都强行压到和 SKILL.state 差不多的约 1,800-token prompt budget。在 Warehouse 100 steps 上，它们分别只有 0.18、0.52、0.22，而 SKILL.state 仍然是 0.94。这个结果说明，优势并不只是“Prompt 变短”，而是<strong>State 保留了任务需要的结构化关系，而普通压缩只是删文本</strong>。</p>
+<p>论文还在相近输入预算下比较了 Sliding Window、Summary-capped、LLMLingua 与 SKILL.state。在 Warehouse 100 steps 上，前三者的分数分别为 0.18、0.52、0.22，SKILL.state 为 0.94。这个实验支持一个较具体的判断：<strong>在该仓储任务中，显式维护状态关系比仅限制历史文本长度更有效。</strong><a href="https://arxiv.org/html/2608.26263v3#S5.T5">表 5</a>。</p>
 
 <div class="callout">
   <p><strong>和 Codex 放在一起看：</strong>SKILL.state 更像一个干净的研究极点——默认只相信当前 structured state；Codex 则更像 production compromise：让 Agent 用 Notes 管理工作状态，但仍保留 searchable History 作为最后的 ground truth。对于通用 Coding Agent，后者能处理“早期细节后来才变重要”的情况；而 SKILL.state 提醒我们，<strong>默认 reasoning substrate 不应该永远是一段不断增长的 conversation。</strong></p>
@@ -787,25 +779,28 @@ Runtime 校验并更新 State
 
 <div class="note green"><strong>没有唯一正确的 Context 形态。</strong>Codex 与 SKILL.state 展示的是两种不同取舍：前者保留可检索的原始历史，适合通用开放任务；后者只把结构化当前状态带到下一步，适合状态可定义、可校验的长程任务。Context Management 应该随任务与模型能力变化，而不是默认只有 append。</div>
 
-<p>截至 2026-09-03，Codex 这套能力仍以 experimental context management 的形式出现在公开代码中。它还很朴素：Notes 本质接近 virtual filesystem + literal search，History 也主要是 list / substring search / bounded read。但方向已经很清楚——Context 不再等同于 Memory，Window 也不再只是“满了之后由 Harness 被动处理”的隐式资源。</p>
+<p>本文核对的 Codex 版本仍把这套能力标为实验功能。Notes 提供虚拟文本文件和文本搜索，History 提供列举、搜索与局部读取。模型借助这些工具，把当前输入、可写工作状态和可回查的原始记录分别管理起来。</p>
 
 <hr>
 
-<h3>参考资料与源码</h3>
+<h3>参考资料与版本</h3>
+<p>本文更新于 2026-10-21；Codex 源码基线为 <code>464add49587a7cb6032d5ab04faa8a1585947853</code>。Astra 提示与参数取自 2026-10-21 00:08（UTC+8）的客户端模型配置快照，客户端版本 <code>0.163.0</code>。这是配置内容，不能单凭它证明某次运行已经触发换窗。</p>
+<p>该快照中的 <code>token_budget.enabled</code> 与 <code>use_history_notes_extension</code> 为 false；支持模型的实验开关路径可以在启动时启用它们，具体还取决于登录、套餐等条件。正文和交互页讨论的是这条路径启用后的行为。</p>
 <ul>
   <li><a href="https://arxiv.org/abs/2608.26263">SKILL.state: Scalable Long-Horizon Agent Skills</a> — Google / Purdue，2026</li>
   <li><a href="https://github.com/openai/codex/pull/42385">PR #42385 · Add experimental context management activation</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/ext/history-notes/src/tools.rs">history-notes · tools.rs</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/ext/history-notes/src/extension.rs">history-notes · extension.rs / thread_hint</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/core/src/tools/handlers/new_context_window_spec.rs">new_context tool spec</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/core/src/tools/handlers/get_context_remaining_spec.rs">get_context_remaining tool spec</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/core/src/context/token_budget_context.rs">token-budget context / window metadata</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/core/src/compact_token_budget.rs">token-budget compaction / fresh window</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tools/src/responses_api.rs">Responses API Namespace types</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tools/src/tool_spec.rs">ToolSpec serialization</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/protocol/src/tool_name.rs">ToolName · namespace + name</a></li>
-  <li><a href="https://github.com/openai/codex/blob/main/codex-rs/core/src/context/world_state/mod.rs">WorldState</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/ext/history-notes/src/tools.rs">history-notes · tools.rs</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/ext/history-notes/src/extension.rs">history-notes · extension.rs / thread_hint</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/core/src/tools/handlers/new_context_window_spec.rs">new_context tool spec</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/core/src/tools/handlers/get_context_remaining_spec.rs">get_context_remaining tool spec</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/core/src/context/token_budget_context.rs">token-budget context / window metadata</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/core/src/compact_token_budget.rs">token-budget compaction / fresh window</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/tools/src/responses_api.rs">Responses API Namespace types</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/tools/src/tool_spec.rs">ToolSpec serialization</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/protocol/src/tool_name.rs">ToolName · namespace + name</a></li>
+  <li><a href="https://github.com/openai/codex/blob/464add49587a7cb6032d5ab04faa8a1585947853/codex-rs/core/src/context/world_state/mod.rs">WorldState</a></li>
 </ul>
 
+<script src="../assets/js/lang-toggle.js"></script>
 </body>
 </html>
