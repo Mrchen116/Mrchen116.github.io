@@ -571,7 +571,7 @@ auto_compact_fallback_buffer_tokens</code></pre>
   </tbody>
 </table>
 
-<p>例如基础阈值是 9,000 tokens、fallback buffer 是 4,000，且模型硬上限更高：一次响应后用量达到 9,500，运行时可以先注入 fallback 提示；模型随后仍在旧窗口里工作，可以写 Notes，再主动调用 <code>new_context()</code>。如果它没有主动切换，用量达到或超过 13,000 后，运行时也会换窗口，<strong>无论它是否写过 Notes</strong>。这些数字用于说明流程，不代表产品统一默认值。</p>
+<p>例如基础阈值是 9,000 tokens、fallback buffer 是 4,000，且模型硬上限更高：一次响应后用量达到 9,500，运行时可以先注入 fallback 提示；模型随后仍在旧窗口里工作，可以写 Notes，再主动调用 <code>new_context()</code>。如果它没有主动切换，用量达到或超过 13,000 后，运行时也会换窗口，<strong>无论它是否写过 Notes</strong>。</p>
 
 <pre><code>接近基础阈值
   → reminder：说明剩余预算与跨窗口保留规则
@@ -785,8 +785,7 @@ Runtime 校验并更新 State
 <hr>
 
 <h3>参考资料与版本</h3>
-<p>本文更新于 2026-10-21；Codex 源码基线为 <code>464add49587a7cb6032d5ab04faa8a1585947853</code>。Astra 提示与参数取自 2026-10-21 00:08（UTC+8）的客户端模型配置快照，客户端版本 <code>0.163.0</code>。这是配置内容，不能单凭它证明某次运行已经触发换窗。</p>
-<p>该快照中的 <code>token_budget.enabled</code> 与 <code>use_history_notes_extension</code> 为 false；支持模型的实验开关路径可以在启动时启用它们，具体还取决于登录、套餐等条件。正文和交互页讨论的是这条路径启用后的行为。</p>
+<p>本文更新于 2026-10-21；Codex 源码版本为 <code>464add49587a7cb6032d5ab04faa8a1585947853</code>。Astra 提示与参数取自客户端 <code>0.163.0</code> 的模型配置（2026-10-21）。</p>
 <ul>
   <li><a href="https://arxiv.org/abs/2608.26263">SKILL.state: Scalable Long-Horizon Agent Skills</a> — Google / Purdue，2026</li>
   <li><a href="https://github.com/openai/codex/pull/42385">PR #42385 · Add experimental context management activation</a></li>
