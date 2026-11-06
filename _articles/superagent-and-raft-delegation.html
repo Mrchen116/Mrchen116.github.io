@@ -1,0 +1,248 @@
+---
+title: "Proactive long-term agent 内部协作设计"
+date:  2026-11-06
+excerpt: "用流程图和时序图，对照 Superagent 与 Raft 如何主动派工、转发消息，以及决定何时找用户。"
+lang:  zh-CN
+---
+
+<style>
+.art-body .delegation-sequence{ margin: 24px 0; }
+    .art-body .delegation-paths{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      gap: 14px;
+    }
+    .art-body .delegation-path{
+      padding: 12px 8px 8px;
+      border: 1px solid var(--a-rule);
+      border-radius: 4px;
+      min-width: 0;
+    }
+    .art-body .delegation-path h3{ margin: 0 8px 10px; }
+    .art-body .delegation-path svg{
+      display: block;
+      width: 100%;
+      height: auto;
+      font-family: -apple-system, "PingFang SC", sans-serif;
+      font-size: 13px;
+      text-anchor: middle;
+    }
+    .art-body .delegation-path .participant{ font-weight: 650; }
+    .art-body .delegation-path .lifeline{ stroke: #9a9a9a; stroke-dasharray: 4 4; }
+    .art-body .delegation-path .message-label{
+      fill: #1a1a1a;
+      paint-order: stroke;
+      stroke: white;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+    .art-body .delegation-path .direct-label{ fill: #4a6f3a; font-weight: 650; }
+    .art-body .delegation-intake{
+      padding: 14px;
+      border: 1px solid var(--a-rule);
+      border-radius: 4px;
+      min-width: 0;
+    }
+    .art-body .delegation-intake h3{ margin: 0 0 12px; }
+    .art-body .delegation-intake ol{
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .art-body .delegation-intake li{ margin: 0; }
+    .art-body .delegation-intake li + li::before{
+      content: "↓";
+      display: block;
+      color: var(--a-accent);
+      text-align: center;
+      line-height: 1.4;
+    }
+    .art-body .intake-node{
+      display: block;
+      padding: 7px 10px;
+      border-radius: 4px;
+      background: var(--a-soft);
+    }
+    .art-body .intake-node span{ display: block; font-size: 14px; color: var(--a-ink); }
+    .art-body .intake-person{ background: var(--a-ochre-soft); }
+    .art-body .intake-agent{ background: var(--a-accent-soft); }
+    .art-body .intake-worker{ background: var(--a-plum-soft); }
+    .art-body .intake-modes{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .art-body .intake-modes .intake-node{ height: 100%; box-sizing: border-box; }
+    .art-body .decision-routes{
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding-left: 20px;
+    }
+    .art-body .delegation-references{ margin: 32px 0; }
+    .art-body .delegation-references summary{ cursor: pointer; font-weight: 600; }
+    .art-body .delegation-sources{ overflow-wrap: anywhere; }
+</style>
+
+<p class="lead">Superagent 让工单接住后续消息。Raft 让主 Agent 留在对话里，持续协调子 Agent。</p>
+
+<h2 id="start">谁决定开工</h2>
+<figure class="delegation-sequence">
+  <div class="delegation-paths">
+    <section class="delegation-intake" aria-labelledby="superagent-intake">
+      <h3 id="superagent-intake">Superagent · 按规则接单</h3>
+      <ol>
+        <li><span class="intake-node intake-person"><strong>人写接单条件</strong><span>面板 → 设置 → 评估 → 接单规则</span></span></li>
+        <li><span class="intake-node"><strong>群里说定一项改动</strong><span>「按钮文案改成『保存草稿』」，没人直接交办给 Agent。</span></span></li>
+        <li><span class="intake-node intake-agent"><strong>Router 查前后文</strong><span>消息通过准入后，核对规则是否命中、目标是否已明确。</span></span></li>
+        <li><div class="intake-modes">
+          <span class="intake-node"><strong><code>observe</code></strong><span>记录「会接单」和理由</span></span>
+          <span class="intake-node intake-worker"><strong><code>auto</code></strong><span>通过检查后，绑定原消息、建工单、派 Worker</span></span>
+        </div></li>
+      </ol>
+    </section>
+    <section class="delegation-intake" aria-labelledby="raft-intake">
+      <h3 id="raft-intake">Raft · 按长期职责行动</h3>
+      <ol>
+        <li><span class="intake-node intake-person"><strong>人给主 Agent 写长期职责</strong><span>例如关注产品文案，职责内的小修可以主动推进。</span></span></li>
+        <li><span class="intake-node"><strong>收到相关消息，或到点巡检</strong><span>主 Agent 从群聊或定时检查中发现文案问题。</span></span></li>
+        <li><span class="intake-node intake-agent"><strong>主 Agent 判断该做什么</strong><span>核对已有授权，判断是否值得开工。</span></span></li>
+        <li><span class="intake-node intake-worker"><strong>把职责内的耗时工作交给子 Agent</strong><span>主 Agent 给目标、上下文和材料路径。独立的工作可以拆开并行。</span></span></li>
+      </ol>
+    </section>
+  </div>
+  <figcaption class="figure-caption">Superagent 默认用 <code>observe</code>。Raft 的定时巡检来自手册示例，内部委派指引需开关和运行时支持。<sup><a href="#ref-policy">[1]</a></sup> <sup><a href="#ref-admission">[2]</a></sup> <sup><a href="#ref-raft-prompt">[6]</a></sup> <sup><a href="#ref-raft-decisions">[7]</a></sup></figcaption>
+</figure>
+
+<h2 id="messages">开工后，消息发给谁</h2>
+<p>两张时序图从同一句直接交办开始。改到一半，用户补充英文用 <em>Save draft</em>，执行者随后问帮助页要不要一起改。</p>
+<figure class="delegation-sequence">
+  <div class="delegation-paths">
+    <div class="delegation-path">
+      <h3 id="superagent-seq-title">Superagent</h3>
+      <svg viewBox="0 0 300 419" role="img" aria-labelledby="superagent-seq-title" aria-describedby="superagent-seq-desc">
+        <desc id="superagent-seq-desc">用户交办给 Router，Router 创建工单并派给 Worker。同话题的补充和答复由系统直接送给 Worker。Worker 把问题给 Router，由 Router 转问用户。结果由 Worker 交给 Router，再发回原话题。</desc>
+        <defs>
+          <marker id="superagent-seq-normal-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L8 4 L0 8 Z" fill="#8b3a2f"/>
+          </marker>
+          <marker id="superagent-seq-direct-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L8 4 L0 8 Z" fill="#4a6f3a"/>
+          </marker>
+        </defs>
+        <line class="lifeline" x1="39" y1="34" x2="39" y2="413"/>
+        <rect x="3" y="4" width="72" height="30" rx="4" fill="#f5ecdb" stroke="#d4a86a"/>
+        <text class="participant" x="39" y="24" fill="#1a1a1a">用户</text>
+        <line class="lifeline" x1="150" y1="34" x2="150" y2="413"/>
+        <rect x="114" y="4" width="72" height="30" rx="4" fill="#f5ebe6" stroke="#c9a89e"/>
+        <text class="participant" x="150" y="24" fill="#8b3a2f">Router</text>
+        <line class="lifeline" x1="261" y1="34" x2="261" y2="413"/>
+        <rect x="225" y="4" width="72" height="30" rx="4" fill="#f1e6ec" stroke="#b88aa0"/>
+        <text class="participant" x="261" y="24" fill="#7a3a5c">Worker</text>
+        <line x1="39" y1="67" x2="148" y2="67" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#superagent-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="59">把按钮改为保存草稿</text>
+        <line x1="150" y1="105" x2="259" y2="105" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#superagent-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="97">派工 · 工单与原话</text>
+        <line x1="39" y1="143" x2="259" y2="143" stroke="#4a6f3a" stroke-width="1.5" marker-end="url(#superagent-seq-direct-arrow)"/>
+        <text class="message-label direct-label" x="150" y="135">英文补充 · 系统直投</text>
+        <line x1="261" y1="219" x2="152" y2="219" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#superagent-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="211">帮助页也改？</text>
+        <line x1="150" y1="257" x2="41" y2="257" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#superagent-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="249">代问 · 帮助页也改？</text>
+        <line x1="39" y1="295" x2="259" y2="295" stroke="#4a6f3a" stroke-width="1.5" marker-end="url(#superagent-seq-direct-arrow)"/>
+        <text class="message-label direct-label" x="150" y="287">只改按钮 · 系统直投</text>
+        <line x1="261" y1="371" x2="152" y2="371" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#superagent-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="363">回报修改结果</text>
+        <line x1="150" y1="409" x2="41" y2="409" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#superagent-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="401">向原话题交付</text>
+      </svg>
+    </div>
+    <div class="delegation-path">
+      <h3 id="raft-seq-title">Raft 内部委派</h3>
+      <svg viewBox="0 0 300 419" role="img" aria-labelledby="raft-seq-title" aria-describedby="raft-seq-desc">
+        <desc id="raft-seq-desc">用户交办给主 Agent，主 Agent 派子 Agent 执行。用户的补充先到主 Agent，再由主 Agent 转给子 Agent。子 Agent 向主 Agent 提问。需要用户决定时，主 Agent 向用户提问，再把用户的决定转给子 Agent。结果也经主 Agent 交付。</desc>
+        <defs>
+          <marker id="raft-seq-normal-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L8 4 L0 8 Z" fill="#8b3a2f"/>
+          </marker>
+          <marker id="raft-seq-direct-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L8 4 L0 8 Z" fill="#4a6f3a"/>
+          </marker>
+        </defs>
+        <line class="lifeline" x1="39" y1="34" x2="39" y2="413"/>
+        <rect x="3" y="4" width="72" height="30" rx="4" fill="#f5ecdb" stroke="#d4a86a"/>
+        <text class="participant" x="39" y="24" fill="#1a1a1a">用户</text>
+        <line class="lifeline" x1="150" y1="34" x2="150" y2="413"/>
+        <rect x="114" y="4" width="72" height="30" rx="4" fill="#f5ebe6" stroke="#c9a89e"/>
+        <text class="participant" x="150" y="24" fill="#8b3a2f">主 Agent</text>
+        <line class="lifeline" x1="261" y1="34" x2="261" y2="413"/>
+        <rect x="225" y="4" width="72" height="30" rx="4" fill="#f1e6ec" stroke="#b88aa0"/>
+        <text class="participant" x="261" y="24" fill="#7a3a5c">子 Agent</text>
+        <line x1="39" y1="67" x2="148" y2="67" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="59">把按钮改为保存草稿</text>
+        <line x1="150" y1="105" x2="259" y2="105" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="97">派工 · 目标与材料</text>
+        <line x1="39" y1="143" x2="148" y2="143" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="135">补充英文文案</text>
+        <line x1="150" y1="181" x2="259" y2="181" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="173">转达英文文案</text>
+        <line x1="261" y1="219" x2="152" y2="219" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="211">帮助页也改？</text>
+        <line x1="150" y1="257" x2="41" y2="257" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="249">请用户定范围</text>
+        <line x1="39" y1="295" x2="148" y2="295" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="287">只改按钮</text>
+        <line x1="150" y1="333" x2="259" y2="333" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="325">转达范围决定</text>
+        <line x1="261" y1="371" x2="152" y2="371" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="205.5" y="363">回报修改结果</text>
+        <line x1="150" y1="409" x2="41" y2="409" stroke="#8b3a2f" stroke-width="1.5" marker-end="url(#raft-seq-normal-arrow)"/>
+        <text class="message-label" x="94.5" y="401">检查后交付</text>
+      </svg>
+    </div>
+  </div>
+  <figcaption class="figure-caption"><strong>Superagent</strong> 的绿色长箭头是系统直投。<strong>Raft</strong> 的用户消息先到主 Agent，由它把相关信息交给子 Agent。<sup><a href="#ref-assignment">[3]</a></sup> <sup><a href="#ref-followup">[4]</a></sup> <sup><a href="#ref-attention">[5]</a></sup> <sup><a href="#ref-raft-prompt">[6]</a></sup></figcaption>
+</figure>
+
+<ul>
+  <li><strong>Superagent</strong> 把工单和来源消息分别交给 Worker，Worker 可以回读原文。原话题里的补充和答复由系统送给 Worker。若收到另一件事，比如「再做一个发布确认页」，Worker 可以按原消息 ID 退回 Router。群里另发的顶层消息走新话题的判断流程。<sup><a href="#ref-assignment">[3]</a></sup> <sup><a href="#ref-followup">[4]</a></sup></li>
+  <li><strong>Raft</strong> 的内部子 Agent 从主 Agent 拿到初始材料和后续补充，问题也回给主 Agent。Raft 还有一种工作区任务，可以派给具名 Agent，由对方用自己的 Inbox 接收消息。<sup><a href="#ref-raft-prompt">[6]</a></sup> <sup><a href="#ref-raft-tasks">[8]</a></sup></li>
+</ul>
+
+<h2 id="authority">子 Agent 问了，谁来决定</h2>
+<div class="delegation-paths">
+  <section class="delegation-intake">
+    <h3>Superagent · Router 转问</h3>
+    <ul class="decision-routes">
+      <li><strong>普通技术选择</strong>由 Worker 决定。</li>
+      <li><strong>Worker 标明需要用户决定</strong>，Router 到对应话题代问，由用户拍板。</li>
+    </ul>
+  </section>
+  <section class="delegation-intake">
+    <h3>Raft · 主 Agent 先判断</h3>
+    <ul class="decision-routes">
+      <li><strong>已有依据和授权</strong>，主 Agent 可以直接答子 Agent。比如用户已确定英文文案。</li>
+      <li><strong>出现新的产品选择</strong>，主 Agent 问用户，再把决定转给子 Agent。</li>
+    </ul>
+  </section>
+</div>
+<p class="figure-caption">Superagent 按规则主动接下的工单还有一条限制。执行中如果发现目标需要新增产品决定，Worker 会结束这次执行并报告放弃。上图的转问路径适用于用户直接交办的工单。<sup><a href="#ref-assignment">[3]</a></sup> <sup><a href="#ref-attention">[5]</a></sup> <sup><a href="#ref-raft-decisions">[7]</a></sup></p>
+
+<h2 id="long-term">长期协作中的决策权</h2>
+<p>Superagent 的 Router 主要在开工前替用户判断该接什么。Raft 的主 Agent 在开工后也能替用户处理已授权的选择。比如团队已约定帮助页和界面文案同步更新，子 Agent 问帮助页要不要改，主 Agent 就能直接答。</p>
+<p>如果模型能可靠地理解上下文和授权范围，我更看好 Raft 的分工。用户可以逐步把一类日常决定交给主 Agent，少做一次次重复确认。过去的选择可以作为判断依据，能否代用户拍板仍取决于用户交给它的权限。</p>
+
+<details class="delegation-references" id="sources" open>
+<summary>参考资料与版本</summary>
+<p>Superagent <code>6337fc8</code>，Raft <code>a98ae00</code>。图中「保存草稿」是说明用的例子。</p>
+<ol class="delegation-sources">
+  <li id="ref-policy"><a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/docs/005-panel.md#settings-groups">Superagent 面板设置</a> · <a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/src/policy.ts#L62-L65">默认接单规则</a></li>
+  <li id="ref-admission"><a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/docs/002-authorization.md#accept-mode-and-rules">消息准入与接单模式</a> · <a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/prompts/admission.md">Router 的评估指引</a></li>
+  <li id="ref-assignment"><a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/src/executor/dsh.ts#L449-L465">Worker 的首条输入</a> · <a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/src/executor/dsh.ts#L88-L124">执行授权、路由说明和原始消息</a></li>
+  <li id="ref-followup"><a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/docs/002-authorization.md#subscriptions-continuing-existing-work">话题订阅与消息退回</a> · <a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/src/sources/feishu-trigger.ts#L16">飞书话题识别</a></li>
+  <li id="ref-attention"><a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/prompts/handoff-worker.md">Worker 的提问指引</a> · <a href="https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/prompts/dispatch.md#L16-L22">Router 的转问与交付指引</a></li>
+  <li id="ref-raft-prompt"><a href="https://github.com/botiverse/raft-source/blob/a98ae003246a0360872a77d76dec2fccd0347ef7/packages/daemon/src/drivers/systemPrompt.ts#L43-L59">Raft 内部委派指引</a> · <a href="https://github.com/botiverse/raft-source/blob/a98ae003246a0360872a77d76dec2fccd0347ef7/packages/server/src/services/featureFlagService.ts#L75-L82">服务端开关</a></li>
+  <li id="ref-raft-decisions"><a href="https://github.com/botiverse/raft-source/blob/a98ae003246a0360872a77d76dec2fccd0347ef7/manual/recipes/decision/when-to-ask-human.md#the-rule">Raft 手册：什么时候问用户</a> · <a href="https://github.com/botiverse/raft-source/blob/a98ae003246a0360872a77d76dec2fccd0347ef7/manual/recipes/archetype/patrol.md">巡检角色示例</a></li>
+  <li id="ref-raft-tasks"><a href="https://github.com/botiverse/raft-source/blob/a98ae003246a0360872a77d76dec2fccd0347ef7/manual/agent-knowledge/task.md">Raft 的消息转任务与指派</a> · <a href="https://github.com/botiverse/raft-source/blob/a98ae003246a0360872a77d76dec2fccd0347ef7/manual/agent-knowledge/mention.md#delivery-vs-attention--three-axes">可见性、消息投递和提醒</a></li>
+</ol>
+</details>
